@@ -1,0 +1,2 @@
+# excelDBInput-OutputAssistMacro
+DBへのデータ登録、データ取得を行うためのExcelマクロ
