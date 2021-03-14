@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 Public wb起動元ブック As Workbook
 Public wb前回実行結果 As Workbook
 Private txtSQL作成元シート名 As String

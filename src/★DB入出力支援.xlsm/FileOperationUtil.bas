@@ -37,6 +37,8 @@ End Enum
 ' 変数
 ' ---------------------------------------------------------------------------------------------------------------------
 
+Private objFSO As Object
+
 ' ルートパス作成済フラグ
 Private rootPathMaked As Boolean
 
@@ -69,6 +71,20 @@ End Function
 ' #####################################################################################################################
 
 ' *********************************************************************************************************************
+' * 機能　：ファイル名取得
+' *********************************************************************************************************************
+'
+Function ファイル名取得(txtパス As String) As String
+
+    If objFSO Is Nothing Then
+        Set objFSO = CreateObject("Scripting.FileSystemObject")
+    End If
+
+    objFSO.GetFileName (txtパス)
+
+End Function
+
+' *********************************************************************************************************************
 ' * 機能　：パス（パス＆ファイル）の存在チェック
 ' * 引数　：directoryPath パス（または、パス＆ファイル）
 ' * 戻り値：チェック結果（パス存在時は1、ファイル存在時は2、パスもファイルも存在しない場合は-1）
@@ -76,13 +92,13 @@ End Function
 '
 Function isDirectoryExist(directoryPath As String) As Long
 
-    Dim FSO
+    If objFSO Is Nothing Then
+        Set objFSO = CreateObject("Scripting.FileSystemObject")
+    End If
     
-    Set FSO = CreateObject("Scripting.FileSystemObject")
-    
-    If True = FSO.FileExists(directoryPath) Then
+    If True = objFSO.FileExists(directoryPath) Then
         isDirectoryExist = 2
-    ElseIf True = FSO.FolderExists(directoryPath) Then
+    ElseIf True = objFSO.FolderExists(directoryPath) Then
         isDirectoryExist = 1
     Else
         isDirectoryExist = -1
@@ -186,7 +202,7 @@ Function getFileNames(directoryPath As String, fileExtensions As Variant, ByRef 
             If InStr(1, UCase(fileName), UCase(fileExtension)) > 0 Then
             
                 ' フルパス＆ファイル名を追加格納。
-                Call 一次配列に値を追加(fileNames, directoryPath & "\" & fileName)
+                Call 一次元配列に値を追加(fileNames, directoryPath & "\" & fileName)
                 Exit For
         
             End If
@@ -211,7 +227,7 @@ Function getDirNames(directoryPath As String) As String()
     ' ディレクトリ移動
     ChDir directoryPath
     
-    buf = Dif(directoryPath & "\" & "*.*", vbDirectory)
+    buf = Dir(directoryPath & "\" & "*.*", vbDirectory)
     Do While buf <> ""
         ' ディレクトリ名取得
         If GetAttr(directoryPath & "\" & buf) And vbDirectory Then
