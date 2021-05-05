@@ -55,7 +55,9 @@ Private txtテーブル論理名, txtテーブル物理名 As String
 Private isHidden As Boolean
 Private lngDBCount結果 As Long
 
-Private obj設定シート As cls設定シート
+Private dic設定値 As Object
+
+Private txtDBMS As String
 
 ' ---------------------------------------------------------------------------------------------------------------------
 ' Property
@@ -91,13 +93,19 @@ Public Property Get カラム終了列()
     カラム終了列 = lngカラム終了列
 End Property
 
-Public Property Get cls設定シート() As cls設定シート
-    Set cls設定シート = obj設定シート
-End Property
 
-Public Property Let cls設定シート(ByRef arg設定シート As cls設定シート)
-    Set obj設定シート = arg設定シート
-End Property
+' *********************************************************************************************************************
+' 機能：初期化
+' *********************************************************************************************************************
+'
+Public Sub 初期化(arg設定値 As Object, argDBMS As String)
+
+    Set dic設定値 = arg設定値
+
+    ' DBMSの種類を設定
+    txtDBMS = argDBMS
+
+End Sub
 
 ' *********************************************************************************************************************
 ' 機能：テーブル名記載行（＝試験データテーブルの開始位置）を設定する。
@@ -114,9 +122,9 @@ Public Sub setテーブル名記載行(ByVal argテーブル名記載行)
     lngデータ開始行 = argテーブル名記載行 + 5
     
     ' 列情報の設定
-    lngカラム開始列 = CAlp2Num(cls設定シート.カラム開始列)
+    lngカラム開始列 = CAlp2Num(dic設定値.Item("カラム開始列"))
     lngカラム終了列 = ActiveSheet.Cells(lngカラム物理名記載行, lngカラム開始列).End(xlToRight).Column
-    
+
     ' 名称情報の設定
     txtテーブル論理名 = ActiveSheet.Range("C" & lngテーブル名記載行).Value
     txtテーブル物理名 = ActiveSheet.Range("A" & lngテーブル名記載行).Value
@@ -248,8 +256,6 @@ Public Function addOrderBy(ByVal txtQuery As String) As String
 
 End Function
 
-
-
 ' *********************************************************************************************************************
 ' 機能：1行のデータ行をもとにSQL文を作成する。
 ' 　　　データ行を指定しない場合、WHERE句なしのSELECT文を作成する。
@@ -272,7 +278,7 @@ Public Function createSELECT文From単行(Optional argデータ行 As Long = -1) As Str
             If stbSELECT文.length = 0 Then
                 stbSELECT文.append ("SELECT ")
             Else
-                If stbSELECT文.lastLineLength > cls設定シート.折返文字数 Then
+                If stbSELECT文.lastLineLength > dic設定値.Item("折返文字数") Then
                     Call stbSELECT文.appendLine("")
                 End If
             
@@ -302,7 +308,7 @@ Public Function createSELECT文From単行(Optional argデータ行 As Long = -1) As Str
                 If stbWHERE句.length = 0 Then
                     stbWHERE句.append (" WHERE ")
                 Else
-                    If stbWHERE句.lastLineLength > cls設定シート.折返文字数 Then
+                    If stbWHERE句.lastLineLength > dic設定値.Item("折返文字数") Then
                         Call stbWHERE句.appendLine("")
                     End If
                     stbWHERE句.append (" AND ")
@@ -460,12 +466,12 @@ Public Function createInsert文(ByRef obj引数対象シート As Worksheet, Optional By
             For k = 2 To lngカラム終了列
             
                 If k > 2 Then
-                    If txtInsertInto.lastLineLength > cls設定シート.折返文字数 Then
+                    If txtInsertInto.lastLineLength > dic設定値.Item("折返文字数") Then
                         Call txtInsertInto.appendLine("")
                     End If
                     Call txtInsertInto.append(", ")
                     
-                    If txtInsertValues.lastLineLength > cls設定シート.折返文字数 Then
+                    If txtInsertValues.lastLineLength > dic設定値.Item("折返文字数") Then
                         Call txtInsertValues.appendLine("")
                     End If
                     Call txtInsertValues.append(", ")
@@ -546,7 +552,7 @@ Public Function createUpdate文(ByRef obj引数対象シート As Worksheet, Optional By
                     
                         stbWHERE.append (" WHERE ")
                     Else
-                        If stbWHERE.lastLineLength > cls設定シート.折返文字数 Then
+                        If stbWHERE.lastLineLength > dic設定値.Item("折返文字数") Then
                             Call stbWHERE.appendLine("")
                         End If
                         stbWHERE.append (" AND ")
@@ -561,7 +567,7 @@ Public Function createUpdate文(ByRef obj引数対象シート As Worksheet, Optional By
                     
                         stbUpdate.append ("UPDATE " & txtテーブル物理名 & " SET ")
                     Else
-                        If stbUpdate.lastLineLength > cls設定シート.折返文字数 Then
+                        If stbUpdate.lastLineLength > dic設定値.Item("折返文字数") Then
                             Call stbUpdate.appendLine("")
                         End If
                         stbUpdate.append (" , ")
@@ -834,6 +840,9 @@ End Function
 Private Function editカラム値( _
     ByVal argカラム値 As String, ByVal arg型桁 As String, Optional ByVal is列名 = False) As String
     
+    Dim dicDBMS As Object
+    Set dicDBMS = dic設定値.Item(dic設定値.Item("接続情報").Item(txtDBMS).Item("DBMS"))
+    
     arg型桁 = UCase(arg型桁)
     
     If argカラム値 = "" Or argカラム値 Like "*(NULL)*" Then
@@ -852,9 +861,9 @@ Private Function editカラム値( _
             editカラム値 = argカラム値
         Else
             If is列名 Then
-                editカラム値 = obj設定シート.日付関数 & "(" & argカラム値 & ", '" & obj設定シート.日付形式 & "')"
+                editカラム値 = dicDBMS.Item("日付関数") & "(" & argカラム値 & ", '" & dicDBMS.Item("日付形式") & "')"
             Else
-                editカラム値 = obj設定シート.日付関数 & "('" & argカラム値 & "', '" & obj設定シート.日付形式 & "')"
+                editカラム値 = dicDBMS.Item("日付関数") & "('" & argカラム値 & "', '" & dicDBMS.Item("日付形式") & "')"
             End If
         End If
     
@@ -869,9 +878,9 @@ Private Function editカラム値( _
             editカラム値 = argカラム値
         Else
             If is列名 Then
-                editカラム値 = obj設定シート.日時関数 & "(" & argカラム値 & ", '" & obj設定シート.日時形式 & "')"
+                editカラム値 = dicDBMS.Item("日時関数") & "(" & argカラム値 & ", '" & dicDBMS.Item("日時形式") & "')"
             Else
-                editカラム値 = obj設定シート.日時関数 & "('" & argカラム値 & "', '" & obj設定シート.日時形式 & "')"
+                editカラム値 = dicDBMS.Item("日時関数") & "('" & argカラム値 & "', '" & dicDBMS.Item("日時形式") & "')"
             End If
         End If
 

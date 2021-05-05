@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmSQL生成 
    Caption         =   "現在のシート"
-   ClientHeight    =   7860
+   ClientHeight    =   8388
    ClientLeft      =   108
    ClientTop       =   456
    ClientWidth     =   12840
@@ -16,11 +16,53 @@ Attribute VB_Exposed = False
 
 Public wb起動元ブック As Workbook
 Public wb前回実行結果 As Workbook
+
 Private txtSQL作成元シート名 As String
 Private txtトランザクション識別文字列 As String
 Private txtSQL実行バッチファイルパス As String
 Private txtSQL実行ログファイルパス As String
 
+Private obj設定値シート As cls設定値シート
+
+' *********************************************************************************************************************
+' * 機能　：フォーム生成時処理
+' *********************************************************************************************************************
+'
+Private Sub UserForm_Initialize()
+
+    Set wb起動元ブック = ActiveWorkbook
+    
+    btnSQL生成.SetFocus
+    
+End Sub
+
+' *********************************************************************************************************************
+' * 機能　：フォーム生成時処理
+' *********************************************************************************************************************
+'
+Public Sub 設定値ロード(arg設定値シート As cls設定値シート)
+
+    Set obj設定値シート = arg設定値シート
+    
+    Dim txt接続情報 As Variant
+    
+    If Not obj設定値シート Is Nothing Then
+    For Each txt接続情報 In obj設定値シート.設定値リスト.Item("接続情報")
+    
+        cmb接続情報.AddItem (txt接続情報)
+        
+    Next txt接続情報
+        
+    cmb接続情報.ListIndex = 0
+    
+    End If
+    
+End Sub
+
+' *********************************************************************************************************************
+' * 機能　：SQL生成ボタン押下時の処理
+' *********************************************************************************************************************
+'
 Private Sub btnSQL生成_Click()
 
     'エラートラップ
@@ -35,6 +77,7 @@ Private Sub btnSQL生成_Click()
     
     Dim obj試験データシート As cls試験データシート
     Set obj試験データシート = New cls試験データシート
+    Call obj試験データシート.初期化(obj設定値シート, cmb接続情報.Text)
     
     Dim obj対象シート As Worksheet
     Set obj対象シート = ActiveSheet
@@ -51,6 +94,7 @@ Private Sub btnSQL生成_Click()
     If ckbSPOOL Then
         txtSQL.Value = txtSQL.Value & vbCrLf & _
             "SPOOL """ & txtトランザクション識別文字列 & ".sql,log" & vbCrLf & vbCrLf
+    End If
     
     If True Then
     
@@ -133,6 +177,7 @@ Private Sub レコード取得ボタン()
     
     Dim obj試験データシート As cls試験データシート
     Set obj試験データシート = New cls試験データシート
+    Call obj試験データシート.初期化(obj設定値シート, cmb接続情報.Text)
     
     Set wb前回実行結果 = obj試験データシート.getレコード(Nothing)
     
@@ -164,12 +209,10 @@ End Sub
 
 Private Sub btn結果をファイルに出力_Click()
 
-    Dim obj設定シート As New cls設定シート
-
-    mkdirIFNotExist obj設定シート.結果ファイル出力先
+    mkdirIFNotExist obj設定値シート.設定値リスト.Item("結果ファイル出力先")
 
     Dim txt出力パス As String
-    txt出力パス = obj設定シート.結果ファイル出力先 & "\" & txtSQL作成元シート名 & "_" & getTimestamp() & ".sql"
+    txt出力パス = obj設定値シート.設定値リスト.Item("結果ファイル出力先") & "\" & txtSQL作成元シート名 & "_" & getTimestamp() & ".sql"
 
     Open txt出力パス For Output As #1
 
@@ -232,13 +275,5 @@ Finally:
     '実行前の状態に戻す
     objアプリケーション制御.アプリケーション制御切替 (True)
 
-End Sub
-
-Private Sub UserForm_Initialize()
-
-    Set wb起動元ブック = ActiveWorkbook
-    
-    btnSQL生成.SetFocus
-    
 End Sub
 

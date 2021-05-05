@@ -36,25 +36,56 @@ Public Enum SQL種別
     DELETEINSERT文 = 5
 End Enum
 
-' Private oraconn As New ADODB.Connection
 Private oraconn As Object
-Private obj設定シート As cls設定シート
+
+Private dic設定値 As Object
+
+Private txtDBMS As String
 
 ' *********************************************************************************************************************
-' 機能：コンストラクタ
+' 機能：コンストラクタ ※ 引数は指定できない
 ' *********************************************************************************************************************
 '
 Public Sub Class_Initialize()
 
     Set oraconn = CreateObject("ADODB.Connection")
-    
-    Set obj設定シート = New cls設定シート
-    
-    ' データベースに接続する（必要な値は設定シートから取得）
-    oraconn.ConnectionString = obj設定シート.getConnectionString
-    
+        
 End Sub
 
+
+' *********************************************************************************************************************
+' 機能：初期化
+' *********************************************************************************************************************
+'
+Public Sub 初期化(arg設定値シート As cls設定値シート, argDBMS As String)
+
+    Set dic設定値 = arg設定値シート.設定値リスト
+
+    ' DBMSの種類を設定
+    txtDBMS = argDBMS
+
+    Dim dic接続情報 As Object
+    Set dic接続情報 = dic設定値.Item("接続情報").Item(txtDBMS)
+    
+    Dim txt接続文字列
+    
+    Dim var設定値 As Variant
+    
+    For Each var設定値 In dic接続情報
+    
+        txt接続文字列 = txt接続文字列 & var設定値 & "=" & dic接続情報.Item(var設定値) & ";"
+        
+    Next var設定値
+    
+    ' データベースに接続する
+    oraconn.ConnectionString = txt接続文字列
+
+End Sub
+
+' *********************************************************************************************************************
+' 機能：終了時の処理
+' *********************************************************************************************************************
+'
 Public Sub Class_Terminate()
     Set oraconn = Nothing
 End Sub
@@ -109,7 +140,6 @@ End Function
 '
 Private Function executeCountSQL() As Boolean
 
-    ' Dim rs As ADODB.Recordset
     Dim rs As Object
     Set rs = CreateObject("ADODB.Recordset")
     
@@ -745,7 +775,7 @@ Private Function getテーブル座標情報() As cls試験データテーブル()
             index = index + 1
             
             Set obj試験データテーブル(index) = New cls試験データテーブル
-            obj試験データテーブル(index).cls設定シート = obj設定シート
+            Call obj試験データテーブル(index).初期化(dic設定値, txtDBMS)
             
             ' 実際の行番号を設定するため開始行分行数を加算
             Set obj試験データテーブル(index).対象シート = ActiveSheet

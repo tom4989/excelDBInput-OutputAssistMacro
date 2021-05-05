@@ -593,59 +593,6 @@ Function タイトル名指定でリスト値を取得(titleName As String, targetSheet As Work
 End Function
 
 ' *********************************************************************************************************************
-' 機能　：タイトル名指定でリスト値のRange情報を取得
-'         ※リスト値がなかった場合、リスト値エリアの1行目（値は空）のRange情報が返却されます。
-' *********************************************************************************************************************
-'
-Function タイトル名指定でリスト値のRange情報を取得(titleName As String, targetSheet As Worksheet) As Range
-
-    ' 検索ヒット数
-    Dim matchCount As Long
-    Dim checkValue As String
-    
-    ' シート内にタイトル名が複数設定されていない事を確認する。
-    matchCount = WorksheetFunction.CountIf(targetSheet.UsedRange, titleName)
-    If 1 <> matchCount Then
-        MsgBox "タイトル「" & titleName & "」が複数見つかったため、処理を中断しました。"
-        End
-    End If
-    
-    ' タイトル名のRange情報を取得
-    Dim FoundCell As Range
-    Set FoundCell = targetSheet.UsedRange.Find(what:=titleName, LookIn:=xlValues, _
-        LookAt:=xlPart, MatchCase:=False, MatchByte:=False)
-    Dim i, MaxRow, MaxCol As Long
-    
-    ' タイトルに対するリスト値を取得（空白行込み）
-    With targetSheet
-        With .Range(.Cells(FoundCell.Row, FoundCell.Column), .Cells(Rows.Count, FoundCell.Column))
-            MaxRow = .Find("*", , xlFormulas, , xlByRows, xlPrevious).Row
-            MaxCol = .Find("*", , xlFormulas, , xlByColumns, xlPrevious).Column
-        End With
-    
-        ' MaxRowを、空白行より一行↑のリスト値の行数に設定する。
-        For i = 1 To (MaxRow - FoundCell.Row)
-            checkValue = .Cells(FoundCell.Row + i, MaxCol).Value
-            If "" = checkValue Or InStr(1, checkValue, TITLE_NAME_PREFIX) > 0 Then
-                If 1 = i Then
-                    Call 処理続行判断("タイトル名「" + titleName + "」に対するリスト値が設定されていません。")
-                    MaxRow = FoundCell.Row + 1
-                Else
-                    MaxRow = FoundCell.Row + i - 1
-                End If
-                    Exit For
-            End If
-        Next
-        
-        ' リスト値を返却
-        Set タイトル名指定でリスト値のRange情報を取得 = _
-            targetSheet.Range(.Cells((FoundCell.Row + 1), FoundCell.Column), .Cells(MaxRow, MaxCol))
-        
-    End With
-
-End Function
-
-' *********************************************************************************************************************
 ' 機能　：引数で指定された行が選択状態であるか判定する
 ' *********************************************************************************************************************
 '
