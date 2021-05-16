@@ -123,7 +123,14 @@ Public Sub setテーブル名記載行(ByVal argテーブル名記載行)
     
     ' 列情報の設定
     lngカラム開始列 = CAlp2Num(dic設定値.Item("カラム開始列"))
-    lngカラム終了列 = ActiveSheet.Cells(lngカラム物理名記載行, lngカラム開始列).End(xlToRight).Column
+    
+    If ActiveSheet.Cells(lngカラム物理名記載行, lngカラム開始列 + 1) <> "" Then
+    
+        lngカラム終了列 = ActiveSheet.Cells(lngカラム物理名記載行, lngカラム開始列).End(xlToRight).Column
+    Else
+        lngカラム終了列 = lngカラム開始列
+        
+    End If
 
     ' 名称情報の設定
     txtテーブル論理名 = ActiveSheet.Range("C" & lngテーブル名記載行).Value
@@ -861,7 +868,7 @@ Private Function editカラム値( _
             editカラム値 = argカラム値
         Else
             If is列名 Then
-                editカラム値 = dicDBMS.Item("日付関数") & "(" & argカラム値 & ", '" & dicDBMS.Item("日付形式") & "')"
+                editカラム値 = dicDBMS.Item("文字列関数") & "(" & argカラム値 & ", '" & dicDBMS.Item("日付形式") & "')"
             Else
                 editカラム値 = dicDBMS.Item("日付関数") & "('" & argカラム値 & "', '" & dicDBMS.Item("日付形式") & "')"
             End If
@@ -878,7 +885,7 @@ Private Function editカラム値( _
             editカラム値 = argカラム値
         Else
             If is列名 Then
-                editカラム値 = dicDBMS.Item("日時関数") & "(" & argカラム値 & ", '" & dicDBMS.Item("日時形式") & "')"
+                editカラム値 = dicDBMS.Item("文字列関数") & "(" & argカラム値 & ", '" & dicDBMS.Item("日時形式") & "')"
             Else
                 editカラム値 = dicDBMS.Item("日時関数") & "('" & argカラム値 & "', '" & dicDBMS.Item("日時形式") & "')"
             End If
@@ -896,7 +903,7 @@ Private Function editカラム値( _
     ' VARCHAR2,CHAR型
     ' -----------------------------------------------------------------------------------------------------------------
     '
-    ElseIf arg型桁 Like "VARCHAR*" Or arg型桁 Like "CHAR*" Then
+    ElseIf arg型桁 Like "VARCHAR*" Or arg型桁 Like "CHAR*" Or arg型桁 Like "BLOB*" Or arg型桁 Like "CLOB*" Then
     
         If is列名 Then
             editカラム値 = argカラム値

@@ -694,10 +694,10 @@ Private Function editƒJƒ‰ƒ€’l( _
         editƒJƒ‰ƒ€’l = argƒJƒ‰ƒ€’l
 
     ' -----------------------------------------------------------------------------------------------------------------
-    ' VARCHAR2,CHARŒ^
+    ' VARCHAR2,CHAR,BLOB,CLOBŒ^
     ' -----------------------------------------------------------------------------------------------------------------
     '
-    ElseIf argŒ^Œ… Like "VARCHAR2*" Or argŒ^Œ… Like "CHAR*" Then
+    ElseIf argŒ^Œ… Like "VARCHAR2*" Or argŒ^Œ… Like "CHAR*" Or argŒ^Œ… Like "BLOB*" Or argŒ^Œ… Like "CLOB*" Then
     
         If is—ñ–¼ Then
             editƒJƒ‰ƒ€’l = argƒJƒ‰ƒ€’l

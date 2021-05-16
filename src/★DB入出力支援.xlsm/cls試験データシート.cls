@@ -96,12 +96,12 @@ End Sub
 '
 Public Function getレコード(ByRef wb前回実行結果 As Workbook) As Workbook
 
-    If ActiveSheet.Range("A1") <> "凡例" Then
-    
-        Call log("想定外のシートが対象となっているためProcedureを終了します。")
-        
-        Exit Function
-    End If
+    ' If ActiveSheet.Range("A1") <> "凡例" Then
+    '
+    '    Call log("想定外のシートが対象となっているためProcedureを終了します。")
+    '
+    '    Exit Function
+    ' End If
      
     ' On Error GoTo occurError
     
@@ -440,9 +440,9 @@ End Function
 Public Function 対象シートSQL文作成( _
     ByRef obj対象シート As Worksheet, ByVal argSQL種別 As SQL種別, Optional ByVal is選択行のみ As Boolean = False) As String
 
-    If obj対象シート.Range("A1") <> "凡例" Then
-        Exit Function
-    End If
+    ' If obj対象シート.Range("A1") <> "凡例" Then
+    '     Exit Function
+    ' End If
     
     Dim obj試験データテーブル() As cls試験データテーブル
     obj試験データテーブル = getテーブル座標情報
