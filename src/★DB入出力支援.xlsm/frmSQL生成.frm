@@ -21,8 +21,10 @@ Private txtSQL作成元シート名 As String
 Private txtトランザクション識別文字列 As String
 Private txtSQL実行バッチファイルパス As String
 Private txtSQL実行ログファイルパス As String
+Private txtSQL作成日時 As String
 
 Private obj設定値シート As cls設定値シート
+
 
 ' *********************************************************************************************************************
 ' * 機能　：フォーム生成時処理
@@ -60,6 +62,129 @@ Public Sub 設定値ロード(arg設定値シート As cls設定値シート)
 End Sub
 
 ' *********************************************************************************************************************
+' * 機能　：レコード取得ボタン押下時の処理
+' *********************************************************************************************************************
+'
+Private Sub btnレコード取得_Click()
+        
+    Call レコード取得ボタン
+        
+    Unload frmSQL生成
+        
+End Sub
+
+' *********************************************************************************************************************
+' * 機能　：レコード取得処理
+' *********************************************************************************************************************
+'
+Private Sub レコード取得ボタン()
+
+    txbステータスバー.Value = get開始メッセージ("レコード取得")
+    
+    'エラートラップ
+    On Error GoTo ErrorCatch
+
+    Dim objアプリケーション制御 As New clsアプリケーション制御
+    objアプリケーション制御.アプリケーション制御切替 (False)
+        
+    ' 本処理
+        
+    wb起動元ブック.Activate
+    
+    Dim obj試験データシート As cls試験データシート
+    Set obj試験データシート = New cls試験データシート
+    Call obj試験データシート.初期化(obj設定値シート, cmb接続情報.Text)
+    
+    Set wb前回実行結果 = obj試験データシート.getレコード(Nothing)
+    
+    If Not (wb前回実行結果 Is Nothing) Then
+        Application.CutCopyMode = False
+        
+        wb前回実行結果.Activate
+        wb前回実行結果.ActiveSheet.Range("A1").Select
+        
+        btnレコード追加取得.Enabled = True
+        
+    End If
+        
+    txbステータスバー.Value = get終了メッセージ("レコード取得")
+        
+   ' 正常終了
+   GoTo Finally
+    
+ErrorCatch:
+
+Finally:
+
+    txbステータスバー.Value = get異常時メッセージ("レコード取得")
+
+    '実行前の状態に戻す
+    objアプリケーション制御.アプリケーション制御切替 (True)
+
+End Sub
+
+' *********************************************************************************************************************
+' * 機能　：更新前レコード取得ボタン押下時の処理
+' *********************************************************************************************************************
+'
+Private Sub btn更新前レコード取得_Click()
+
+    レコード取得ボタン
+    btn更新後レコード取得.Enabled = True
+
+End Sub
+
+' *********************************************************************************************************************
+' * 機能　：更新後レコード取得ボタン押下時の処理
+' *********************************************************************************************************************
+'
+Private Sub btn更新後レコード取得_Click()
+
+    txbステータスバー.Value = get開始メッセージ("更新後レコード取得")
+    
+    'エラートラップ
+    On Error GoTo ErrorCatch
+
+    Dim objアプリケーション制御 As New clsアプリケーション制御
+    objアプリケーション制御.アプリケーション制御切替 (False)
+        
+    ' 本処理
+    wb起動元ブック.Activate
+    
+    Dim obj試験データシート As cls試験データシート
+    Set obj試験データシート = New cls試験データシート
+    
+    Set wb前回実行結果 = obj試験データシート.getレコード(wb前回実行結果)
+    
+    If Not (wb前回実行結果 Is Nothing) Then
+        Application.CutCopyMode = False
+        
+        wb前回実行結果.Activate
+        wb前回実行結果.ActiveSheet.Range("A1").Select
+        
+        Call obj試験データシート.edit実行結果差分(wb前回実行結果)
+    
+    End If
+
+    txbステータスバー.Value = get終了メッセージ("更新後レコード取得")
+
+    btn更新後レコード取得.Enabled = False
+
+   ' 正常終了
+   GoTo Finally
+    
+ErrorCatch:
+
+Finally:
+
+    txbステータスバー.Value = get異常時メッセージ("レコード取得")
+
+    '実行前の状態に戻す
+    objアプリケーション制御.アプリケーション制御切替 (True)
+
+End Sub
+
+' *********************************************************************************************************************
 ' * 機能　：SQL生成ボタン押下時の処理
 ' *********************************************************************************************************************
 '
@@ -67,6 +192,8 @@ Private Sub btnSQL生成_Click()
 
     'エラートラップ
     On Error GoTo ErrorCatch
+
+    txtSQL作成日時 = getTimestamp()
 
     txbステータスバー.Value = get開始メッセージ("SQL生成")
 
@@ -117,6 +244,10 @@ Private Sub btnSQL生成_Click()
     
     End If
     
+    ' 後続のボタンをenableに変更
+    btnクリップボードにコピー.Enabled = True
+    btn結果をファイルに出力.Enabled = True
+
     txbステータスバー.Value = get終了メッセージ("SQL生成")
     
    ' 正常終了
@@ -133,6 +264,10 @@ Finally:
         
 End Sub
 
+' *********************************************************************************************************************
+' * 機能　：SQL文生成処理
+' *********************************************************************************************************************
+'
 Private Function createSQL文( _
     ByRef obj試験データシート As cls試験データシート, _
     ByRef obj対象シート As Worksheet) As String
@@ -152,128 +287,62 @@ Private Function createSQL文( _
     End If
     
 End Function
-        
-Private Sub btnレコード取得_Click()
-        
-    Call レコード取得ボタン
-        
-    Unload frmSQL生成
-        
-End Sub
-        
-Private Sub レコード取得ボタン()
 
-    txbステータスバー.Value = get開始メッセージ("レコード取得")
-    
-    'エラートラップ
-    On Error GoTo ErrorCatch
+' *********************************************************************************************************************
+' * 機能　：クリップボードにコピー
+' *********************************************************************************************************************
+'
+Private Sub btnクリップボードにコピー_Click()
 
-    Dim objアプリケーション制御 As New clsアプリケーション制御
-    objアプリケーション制御.アプリケーション制御切替 (False)
-        
-    ' 本処理
-        
-    wb起動元ブック.Activate
+    With CreateObject("Forms.TextBox.1")
+        .MultiLine = True
+        .Text = txtSQL.Value
+        .SelStart = 0
+        .SelLength = .TextLength
+        .Copy
+    End With
     
-    Dim obj試験データシート As cls試験データシート
-    Set obj試験データシート = New cls試験データシート
-    Call obj試験データシート.初期化(obj設定値シート, cmb接続情報.Text)
-    
-    Set wb前回実行結果 = obj試験データシート.getレコード(Nothing)
-    
-    If Not (wb前回実行結果 Is Nothing) Then
-        Application.CutCopyMode = False
-        
-        wb前回実行結果.Activate
-        wb前回実行結果.ActiveSheet.Range("A1").Select
-        
-        btnレコード追加取得.Enabled = True
-        
-    End If
-        
-    txbステータスバー.Value = get終了メッセージ("レコード取得")
-        
-   ' 正常終了
-   GoTo Finally
-    
-ErrorCatch:
-
-Finally:
-
-    txbステータスバー.Value = get異常時メッセージ("レコード取得")
-
-    '実行前の状態に戻す
-    objアプリケーション制御.アプリケーション制御切替 (True)
+    txbステータスバー.Value = get終了メッセージ("クリップボードにコピー")
 
 End Sub
 
+' *********************************************************************************************************************
+' * 機能　：結果をファイルに出力ボタン押下時の処理
+' *********************************************************************************************************************
+'
 Private Sub btn結果をファイルに出力_Click()
 
     mkdirIFNotExist obj設定値シート.設定値リスト.Item("結果ファイル出力先")
 
     Dim txt出力パス As String
-    txt出力パス = obj設定値シート.設定値リスト.Item("結果ファイル出力先") & "\" & txtSQL作成元シート名 & "_" & getTimestamp() & ".sql"
+    txt出力パス = obj設定値シート.設定値リスト.Item("結果ファイル出力先") & "\" & _
+        txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".sql"
 
     Open txt出力パス For Output As #1
-
-    Print #1, txtSQL.Value
-
+    
+    Dim txtSQLファイル内容 As String
+    txtSQLファイル内容 = "SPOOL " & txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".log" & vbCrLf & _
+        txtSQL.Value & vbCrLf & _
+        "SPOOL OFF" & vbCrLf & _
+        "EXIT"
+    
+    Print #1, txtSQLファイル内容
     Close #1
 
-    txbステータスバー = txt出力パス
+    Dim txtバッチファイル内容 As String
+    txtバッチファイル内容 = "sqlplus " & _
+        obj設定値シート.設定値リスト("接続情報").Item(cmb接続情報.Value).Item("UID") & "/" & _
+        obj設定値シート.設定値リスト("接続情報").Item(cmb接続情報.Value).Item("PWD") & "@" & _
+        obj設定値シート.設定値リスト("接続情報").Item(cmb接続情報.Value).Item("DSN") & _
+        " @" & txt出力パス & vbCrLf & "pause"
 
-End Sub
+    Open txt出力パス & ".bat" For Output As #1
+    Print #1, txtバッチファイル内容
+    Close #1
 
-Private Sub btn更新前レコード取得_Click()
-
-    レコード取得ボタン
-    btn更新後レコード取得.Enabled = True
-
-End Sub
-
-Private Sub btn更新後レコード取得_Click()
-
-    txbステータスバー.Value = get開始メッセージ("更新後レコード取得")
-    
-    'エラートラップ
-    On Error GoTo ErrorCatch
-
-    Dim objアプリケーション制御 As New clsアプリケーション制御
-    objアプリケーション制御.アプリケーション制御切替 (False)
-        
-    ' 本処理
-    wb起動元ブック.Activate
-    
-    Dim obj試験データシート As cls試験データシート
-    Set obj試験データシート = New cls試験データシート
-    
-    Set wb前回実行結果 = obj試験データシート.getレコード(wb前回実行結果)
-    
-    If Not (wb前回実行結果 Is Nothing) Then
-        Application.CutCopyMode = False
-        
-        wb前回実行結果.Activate
-        wb前回実行結果.ActiveSheet.Range("A1").Select
-        
-        Call obj試験データシート.edit実行結果差分(wb前回実行結果)
-    
-    End If
-
-    txbステータスバー.Value = get終了メッセージ("更新後レコード取得")
-
-    btn更新後レコード取得.Enabled = False
-
-   ' 正常終了
-   GoTo Finally
-    
-ErrorCatch:
-
-Finally:
-
-    txbステータスバー.Value = get異常時メッセージ("レコード取得")
-
-    '実行前の状態に戻す
-    objアプリケーション制御.アプリケーション制御切替 (True)
+    ' 結果出力
+    txbステータスバー.Value = get終了メッセージ("結果をファイルに出力")
+    txbステータスバー = txbステータスバー.Value & vbCr & txt出力パス
 
 End Sub
 

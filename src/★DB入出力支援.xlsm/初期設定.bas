@@ -34,6 +34,9 @@ Sub createSELECT文()
 
     frmSQL生成.Show vbModeless
     
+    Set obj設定値シート = New cls設定値シート
+    obj設定値シート.ロード
+
     Call frmSQL生成.設定値ロード(obj設定値シート)
     
     Excel.Application.CutCopyMode = False
