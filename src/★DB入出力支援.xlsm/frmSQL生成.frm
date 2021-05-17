@@ -22,9 +22,9 @@ Private txtトランザクション識別文字列 As String
 Private txtSQL実行バッチファイルパス As String
 Private txtSQL実行ログファイルパス As String
 Private txtSQL作成日時 As String
+Private txt結果ファイル出力先 As String
 
 Private obj設定値シート As cls設定値シート
-
 
 ' *********************************************************************************************************************
 ' * 機能　：フォーム生成時処理
@@ -35,7 +35,7 @@ Private Sub UserForm_Initialize()
     Set wb起動元ブック = ActiveWorkbook
     
     btnSQL生成.SetFocus
-    
+
 End Sub
 
 ' *********************************************************************************************************************
@@ -49,14 +49,17 @@ Public Sub 設定値ロード(arg設定値シート As cls設定値シート)
     Dim txt接続情報 As Variant
     
     If Not obj設定値シート Is Nothing Then
-    For Each txt接続情報 In obj設定値シート.設定値リスト.Item("接続情報")
+        For Each txt接続情報 In obj設定値シート.設定値リスト.Item("接続情報")
     
-        cmb接続情報.AddItem (txt接続情報)
+            cmb接続情報.AddItem (txt接続情報)
         
-    Next txt接続情報
+        Next txt接続情報
         
-    cmb接続情報.ListIndex = 0
+        cmb接続情報.ListIndex = 0
     
+        txt結果ファイル出力先 = Replace(obj設定値シート.設定値リスト.Item("結果ファイル出力先"), _
+            "%USERPROFILE%", Environ("UserProfile"))
+
     End If
     
 End Sub
@@ -247,6 +250,9 @@ Private Sub btnSQL生成_Click()
     ' 後続のボタンをenableに変更
     btnクリップボードにコピー.Enabled = True
     btn結果をファイルに出力.Enabled = True
+    btn出力ファイルを実行.Enabled = False
+    btnエラー確認.Enabled = False
+
 
     txbステータスバー.Value = get終了メッセージ("SQL生成")
     
@@ -284,6 +290,11 @@ Private Function createSQL文( _
     ElseIf rdDelete Then
         createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE文, rdb選択行のみ)
         
+    ElseIf rdDELETEINSERT Then
+        
+        createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE文, rdb選択行のみ) & _
+            obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.INSERT文, rdb選択行のみ)
+        
     End If
     
 End Function
@@ -312,11 +323,10 @@ End Sub
 '
 Private Sub btn結果をファイルに出力_Click()
 
-    mkdirIFNotExist obj設定値シート.設定値リスト.Item("結果ファイル出力先")
+    mkdirIFNotExist txt結果ファイル出力先
 
     Dim txt出力パス As String
-    txt出力パス = obj設定値シート.設定値リスト.Item("結果ファイル出力先") & "\" & _
-        txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".sql"
+    txt出力パス = txt結果ファイル出力先 & "\" & txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".sql"
 
     Open txt出力パス For Output As #1
     
@@ -330,7 +340,17 @@ Private Sub btn結果をファイルに出力_Click()
     Close #1
 
     Dim txtバッチファイル内容 As String
-    txtバッチファイル内容 = "sqlplus " & _
+    
+    txtバッチファイル内容 = "cd " & txt結果ファイル出力先 & vbCrLf
+    
+    If obj設定値シート.設定値リスト.Exists("ORACLE_HOME") Then
+     
+        txtバッチファイル内容 = txtバッチファイル内容 & _
+            "set ORACLE_HOME=" & obj設定値シート.設定値リスト("ORACLE_HOME") & vbCrLf
+    End If
+    
+    txtバッチファイル内容 = txtバッチファイル内容 & _
+        "sqlplus " & _
         obj設定値シート.設定値リスト("接続情報").Item(cmb接続情報.Value).Item("UID") & "/" & _
         obj設定値シート.設定値リスト("接続情報").Item(cmb接続情報.Value).Item("PWD") & "@" & _
         obj設定値シート.設定値リスト("接続情報").Item(cmb接続情報.Value).Item("DSN") & _
@@ -344,5 +364,34 @@ Private Sub btn結果をファイルに出力_Click()
     txbステータスバー.Value = get終了メッセージ("結果をファイルに出力")
     txbステータスバー = txbステータスバー.Value & vbCr & txt出力パス
 
+    btn出力ファイルを実行.Enabled = True
+
 End Sub
 
+' *********************************************************************************************************************
+' * 機能　：結果をファイルに出力ボタン押下時の処理
+' *********************************************************************************************************************
+'
+Private Sub btn出力ファイルを実行_Click()
+
+    Dim txt出力パス As String
+    txt出力パス = txt結果ファイル出力先 & "\" & txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".sql.bat"
+
+    Call Shell(txt出力パス, vbNormalFocus)
+
+    btnエラー確認.Enabled = True
+    
+End Sub
+
+' *********************************************************************************************************************
+' * 機能　：エラー確認ボタン押下時の処理
+' *********************************************************************************************************************
+'
+Private Sub btnエラー確認_Click()
+
+    Dim txt出力パス As String
+    txt出力パス = txt結果ファイル出力先 & "\" & txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".log"
+
+    Call Shell("notepad.exe " & txt出力パス, vbNormalFocus)
+
+End Sub

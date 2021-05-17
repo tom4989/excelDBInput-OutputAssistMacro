@@ -82,9 +82,22 @@ End Sub
 '
 Public Sub テンプレート作成()
 
-    ' 出力対象のテンプレート分処理を繰り返す
+    init開始時刻
+
+    ' 処理対象のカウント
     Dim txtテンプレート名 As Variant
+    Dim lng処理対象件数 As Long: lng処理対象件数 = 0
+   
+    For Each txtテンプレート名 In dicテンプレート設定値.Item("テンプレート").Keys
     
+        lng処理対象件数 = lng処理対象件数 + UBound(dicテンプレート設定値.Item("テンプレート").Item(txtテンプレート名)) + 1
+    
+    Next txtテンプレート名
+
+    Dim lng処理済件数 As Long: lng処理済件数 = 1
+
+    ' 出力対象のテンプレート分処理を繰り返す
+
     For Each txtテンプレート名 In dicテンプレート設定値.Item("テンプレート").Keys
     
         Call f_シートコピー(ThisWorkbook, "★テンプレート書式", CStr(txtテンプレート名))
@@ -98,6 +111,11 @@ Public Sub テンプレート作成()
         
             Call テーブル作成(ThisWorkbook.Sheets(txtテンプレート名), CStr(txtテーブル名), lng現在位置)
             lng現在位置 = lng現在位置 + lngテンプレート行数
+                
+            setステータスバー (lng処理済件数 & "/" & lng処理対象件数 & _
+                " 件処理済 " & txtテンプレート名 & " " & txtテーブル名)
+
+            lng処理済件数 = lng処理済件数 + 1
             
         Next txtテーブル名
         
@@ -105,6 +123,8 @@ Public Sub テンプレート作成()
             ThisWorkbook.Sheets(txtテンプレート名), lngテンプレート開始位置)
         
     Next txtテンプレート名
+
+    setステータスバー (lng処理済件数 - 1 & "/" & lng処理対象件数 & " 件 完了")
 
 End Sub
 
