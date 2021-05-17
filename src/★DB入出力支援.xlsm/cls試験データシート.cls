@@ -287,8 +287,6 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
     
     wb実行結果.ActiveSheet.Rows.Ungroup
     
-    wb実行結果.ActiveSheet.Range("F1").Value = "" ' マクロ用のガイドつぶし
-    
     wb実行元ブック.Activate
     
     With ActiveSheet
@@ -337,7 +335,7 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
                 
             End With
             
-            With wb実行結果.ActiveSheet.Range("F" & lng出力最終行)
+            With wb実行結果.ActiveSheet.Range("G" & lng出力最終行)
             
                 .ClearComments
                 .AddComment ("-- 結果取得時のSQL" & vbCrLf _

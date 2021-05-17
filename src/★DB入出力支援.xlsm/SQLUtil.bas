@@ -108,7 +108,7 @@ End Function
 '
 Public Function get件数()
 
-    get件数 = Me.対象シート.Cells(lngテーブル名記載行, 6)
+    get件数 = Me.対象シート.Cells(lngテーブル名記載行, 7)
 
 End Function
 

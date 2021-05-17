@@ -133,8 +133,8 @@ Private Sub テーブル作成(ws対象シート As Worksheet, txtテーブル名 As String, ind
         Set rs = dbconn.Execute(txtSQL)
 
         .Cells(lngEnd, 1) = txtテーブル名
-        .Cells(lngEnd, 3) = rs.Fields("TABLE_COMMENTS")
-        .Cells(lngEnd, 3).WrapText = False
+        .Cells(lngEnd, 4) = rs.Fields("TABLE_COMMENTS")
+        .Cells(lngEnd, 4).WrapText = False
 
         Dim j As Long: j = 2
         Do Until rs.EOF
@@ -150,8 +150,19 @@ Private Sub テーブル作成(ws対象シート As Worksheet, txtテーブル名 As String, ind
             End If
 
             If f_配列含まれているかチェック( _
+                dicテンプレート設定値.Item("データ型桁数").Item("DATA_PRECISION"), rs.Fields("DATA_TYPE")) Then
+                
+                If rs.Fields("DATA_PRECISION") <> "" Then
+                
+                    txt桁 = "(" & rs.Fields("DATA_PRECISION")
+
+                End If
+
+            End If
+
+            If f_配列含まれているかチェック( _
                 dicテンプレート設定値.Item("データ型桁数").Item("DATA_SCALE"), rs.Fields("DATA_TYPE")) _
-                And rs.Fields("DATA_SCALE") <> "" Then
+                And rs.Fields("DATA_SCALE") <> "" And rs.Fields("DATA_SCALE") <> 0 Then
 
                 If txt桁 <> "" Then
                 

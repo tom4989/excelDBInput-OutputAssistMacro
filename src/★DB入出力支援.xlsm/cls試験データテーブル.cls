@@ -133,7 +133,7 @@ Public Sub setテーブル名記載行(ByVal argテーブル名記載行)
     End If
 
     ' 名称情報の設定
-    txtテーブル論理名 = ActiveSheet.Range("C" & lngテーブル名記載行).Value
+    txtテーブル論理名 = ActiveSheet.Range("D" & lngテーブル名記載行).Value
     txtテーブル物理名 = ActiveSheet.Range("A" & lngテーブル名記載行).Value
 
     ' 表示/非表示状態(論理名列の状態で判断)
@@ -232,7 +232,7 @@ End Function
 '
 Public Function get件数()
 
-    get件数 = Me.対象シート.Cells(lngテーブル名記載行, 6)
+    get件数 = Me.対象シート.Cells(lngテーブル名記載行, 7)
 
 End Function
 
