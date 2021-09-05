@@ -15,6 +15,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 
+
 Public wb起動元ブック As Workbook
 Public wb前回実行結果 As Workbook
 
@@ -107,8 +108,6 @@ Private Sub レコード取得ボタン()
         wb前回実行結果.Activate
         wb前回実行結果.ActiveSheet.Range("A1").Select
         
-        btnレコード追加取得.Enabled = True
-        
     End If
         
     txbステータスバー.Value = get終了メッセージ("レコード取得")
@@ -138,6 +137,10 @@ Private Sub btn更新前レコード取得_Click()
     レコード取得ボタン
     btn更新後レコード取得.Enabled = True
 
+    frmSQL生成.Hide
+    frmSQL生成.Show
+    AppActivate Application.Caption
+
 End Sub
 
 ' *********************************************************************************************************************
@@ -159,7 +162,8 @@ Private Sub btn更新後レコード取得_Click()
     
     Dim obj試験データシート As cls試験データシート
     Set obj試験データシート = New cls試験データシート
-    
+    Call obj試験データシート.初期化(obj設定値シート, cmb接続情報.Text)
+
     Set wb前回実行結果 = obj試験データシート.getレコード(wb前回実行結果)
     
     If Not (wb前回実行結果 Is Nothing) Then
@@ -189,6 +193,14 @@ Finally:
 
     '実行前の状態に戻す
     objアプリケーション制御.アプリケーション制御切替 (True)
+    
+    Dim wbアクティブにしたいブック As Workbook
+    Set wbアクティブにしたいブック = wb前回実行結果
+    
+    Unload frmSQL生成
+    wbアクティブにしたいブック.Activate
+    Set wbアクティブにしたいブック = Nothing
+    AppActivate Application.Caption
 
 End Sub
 

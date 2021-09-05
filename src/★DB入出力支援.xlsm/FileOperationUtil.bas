@@ -49,6 +49,47 @@ Function ファイル名取得(txtパス As String) As String
 
 End Function
 
+
+' *********************************************************************************************************************
+' * 機能　：フォルダ名取得
+' *********************************************************************************************************************
+'
+Function funフォルダ名取得(txtパス As String) As String
+
+    Call subFSO初期化
+    
+    If objFSO.FolderExists(txtパス) Then
+    
+        funフォルダ名取得 = txtパス
+        Exit Function
+    
+    End If
+    
+    funフォルダ名取得 = objFSO.getParentFolderName(txtパス)
+
+End Function
+
+' *********************************************************************************************************************
+' * 機能　：ファイル名にサフィックスを付与する。
+' *********************************************************************************************************************
+'
+Function f_日時サフィックス付与(txtパス As String, txtサフィックス As String) As String
+
+    If txtサフィックス <> "" Then
+        
+        Dim txt拡張子 As String
+        txt拡張子 = Mid(txtパス, InStrRev(txtパス, "."))
+        
+        f_日時サフィックス付与 = Replace(txtパス, txt拡張子, Format(Now, txtサフィックス) & txt拡張子)
+        
+    Else
+    
+        f_日時サフィックス付与 = txtパス
+        
+    End If
+
+End Function
+
 ' *********************************************************************************************************************
 ' * 機能　：パス（パス＆ファイル）の存在チェック
 ' * 引数　：directoryPath パス（または、パス＆ファイル）
@@ -206,8 +247,10 @@ End Function
 ' *********************************************************************************************************************
 '
 Function getDirNames(directoryPath As String) As String()
+
+    Call subFSO初期化
+
     Dim buf As String
-    
     Dim dirNames() As String
     
     ' ディレクトリ移動
@@ -216,7 +259,7 @@ Function getDirNames(directoryPath As String) As String()
     buf = Dir(directoryPath & "\" & "*.*", vbDirectory)
     Do While buf <> ""
         ' ディレクトリ名取得
-        If GetAttr(directoryPath & "\" & buf) And vbDirectory Then
+        If objFSO.FolderExists(directoryPath & "\" & buf) And vbDirectory Then
             If buf <> "." And buf <> ".." Then
             
                 ' ディレクトリ名を追加格納。
