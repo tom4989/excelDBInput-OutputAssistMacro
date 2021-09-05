@@ -14,6 +14,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
+
 Public wb起動元ブック As Workbook
 Public wb前回実行結果 As Workbook
 
@@ -117,6 +118,8 @@ Private Sub レコード取得ボタン()
     
 ErrorCatch:
 
+    Call subエラー表示
+
 Finally:
 
     txbステータスバー.Value = get異常時メッセージ("レコード取得")
@@ -177,6 +180,8 @@ Private Sub btn更新後レコード取得_Click()
    GoTo Finally
     
 ErrorCatch:
+
+    Call subエラー表示
 
 Finally:
 
@@ -262,6 +267,7 @@ Private Sub btnSQL生成_Click()
 ErrorCatch:
 
     txbステータスバー.Value = get終了メッセージ("SQL生成")
+    Call subエラー表示
 
 Finally:
 

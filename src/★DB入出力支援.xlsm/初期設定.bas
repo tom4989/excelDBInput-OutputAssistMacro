@@ -60,7 +60,7 @@ End Sub
 ' * 機能　：テンプレート作成
 ' *********************************************************************************************************************
 '
-Public Sub テンプレート作成()
+Public Sub テンプレート作成(Optional argサイレントモード As Boolean = False)
 
     'エラートラップ
     On Error GoTo ErrorCatch
@@ -85,6 +85,8 @@ Public Sub テンプレート作成()
    GoTo Finally
    
 ErrorCatch:
+
+    subエラー表示 (argサイレントモード)
 
 Finally:
 

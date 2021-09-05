@@ -96,15 +96,6 @@ End Sub
 '
 Public Function getレコード(ByRef wb前回実行結果 As Workbook) As Workbook
 
-    ' If ActiveSheet.Range("A1") <> "凡例" Then
-    '
-    '    Call log("想定外のシートが対象となっているためProcedureを終了します。")
-    '
-    '    Exit Function
-    ' End If
-     
-    ' On Error GoTo occurError
-    
     oraconn.Open
     
     If executeCountSQL Then ' ユーザが件数を確認し続行した場合のみデータを取得
@@ -117,20 +108,7 @@ Public Function getレコード(ByRef wb前回実行結果 As Workbook) As Workbook
     Set oraconn = Nothing
     
     Exit Function
-    
-occurError:
-
-    Dim txtエラーメッセージ As String
-    
-    txtエラーメッセージ = txtエラーメッセージ & "エラー番号：" & Err.Number & vbCrLf
-    txtエラーメッセージ = txtエラーメッセージ & Err.Description & vbCrLf
-    txtエラーメッセージ = txtエラーメッセージ & "ヘルプファイル名：" & Err.HelpContext & vbCrLf
-    txtエラーメッセージ = txtエラーメッセージ & "プロジェクト名：" & Err.Source
-    
-    MsgBox txtエラーメッセージ
-    
-    End
-    
+        
 End Function
     
 ' *********************************************************************************************************************

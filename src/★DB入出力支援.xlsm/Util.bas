@@ -35,6 +35,10 @@ End Function
 ' #
 ' #####################################################################################################################
 
+' *********************************************************************************************************************
+' * 機能　：開始メッセージを取得する
+' *********************************************************************************************************************
+'
 Function get開始メッセージ(ByVal txt処理名 As String) As String
 
     Call init開始時刻
@@ -47,6 +51,10 @@ Function get開始メッセージ(ByVal txt処理名 As String) As String
 
 End Function
 
+' *********************************************************************************************************************
+' * 機能　：終了メッセージを取得する
+' *********************************************************************************************************************
+'
 Function get終了メッセージ(ByVal txt処理名 As String) As String
 
     Dim txtメッセージ As String
@@ -57,6 +65,10 @@ Function get終了メッセージ(ByVal txt処理名 As String) As String
 
 End Function
 
+' *********************************************************************************************************************
+' * 機能　：エラー時のメッセージを取得する
+' *********************************************************************************************************************
+'
 Function get異常時メッセージ(ByVal txt処理名 As String) As String
 
     Dim txtメッセージ As String
@@ -65,6 +77,39 @@ Function get異常時メッセージ(ByVal txt処理名 As String) As String
     Debug.Print txtメッセージ
     get異常時メッセージ = txtメッセージ
 End Function
+
+' *********************************************************************************************************************
+' * 機能　：エラーオブジェクトの内容をメッセージダイアログ、ログに出力する。
+' *********************************************************************************************************************
+'
+Sub subエラー表示(Optional argサイレントモード As Boolean = False)
+
+    Dim txtエラー内容 As clsStringBuilder
+    Set txtエラー内容 = New clsStringBuilder
+    
+    txtエラー内容.append ("Description: ")
+    txtエラー内容.appendLine (err.Description)
+    
+    txtエラー内容.append ("HelpContext: ")
+    txtエラー内容.appendLine (err.HelpContext)
+    
+    txtエラー内容.append ("HelpFile: ")
+    txtエラー内容.appendLine (err.HelpFile)
+    
+    txtエラー内容.append ("LastDllError: ")
+    txtエラー内容.appendLine (err.LastDllError)
+    
+    txtエラー内容.append ("Number: ")
+    txtエラー内容.appendLine (err.Number)
+
+    If Not argサイレントモード Then
+        MsgBox txtエラー内容.toString, vbCritical
+    End If
+    
+    subエラーログファイル出力 (txtエラー内容.toString)
+        
+End Sub
+
 
 ' #####################################################################################################################
 ' #
@@ -417,7 +462,7 @@ On Error GoTo ERROR_
     Exit Function
     
 ERROR_:
-    If Err.Number = 9 Then
+    If err.Number = 9 Then
         IsArrayEx = 0
     End If
 End Function
