@@ -59,8 +59,7 @@ Public Sub 設定値ロード(arg設定値シート As cls設定値シート)
         
         cmb接続情報.ListIndex = 0
     
-        txt結果ファイル出力先 = Replace(obj設定値シート.設定値リスト.Item("結果ファイル出力先"), _
-            "%USERPROFILE%", Environ("UserProfile"))
+        txt結果ファイル出力先 = obj設定値シート.設定値リスト.Item("結果ファイル出力先")
 
     End If
     
@@ -395,7 +394,6 @@ Private Sub btn出力ファイルを実行_Click()
     Dim txt出力パス As String
     txt出力パス = txt結果ファイル出力先 & "\" & txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".sql.bat"
 
-    Call Shell(txt出力パス, vbNormalFocus)
     Call Shell("cmd.exe /c " & txt出力パス, vbNormalFocus)
 
     btnエラー確認.Enabled = True

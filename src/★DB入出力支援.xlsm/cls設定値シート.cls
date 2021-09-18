@@ -22,6 +22,8 @@ Const cnstブックシート名 = "*ブックシート名"
 '
 Private objReg As Object
 
+Private dic環境変数 As Object
+
 Private dic設定値リスト As Object
 
 Public Property Get 設定値リスト() As Object
@@ -49,6 +51,9 @@ End Sub
 ' *********************************************************************************************************************
 '
 Public Sub ロード(Optional txt設定値シート As String = cnstシート名)
+
+    ' 環境変数取得
+    Call 環境変数取得
 
     ' 辞書初期化
     Set dic設定値リスト = CreateObject("Scripting.Dictionary")
@@ -179,10 +184,23 @@ Private Function 階層一致確認(ByRef var検証対象() As Variant, lng行数 As Long, l
 End Function
 
 ' *********************************************************************************************************************
-' 機能：ブックシート名の[]を、Like演算子で使用できるようにエスケープする
+' 機能：シートに記載されたブックシート名の[]を、Like演算子で使用できるようにエスケープする
 ' *********************************************************************************************************************
 '
 Function エスケープ(txt項目名, txt項目値) As String
+
+    ' 環境変数の置換を行う
+    If txt項目値 Like "*%*%*" Then
+    
+        Dim varKey As Variant
+        
+        For Each varKey In dic環境変数.Keys
+        
+            txt項目値 = Replace(txt項目値, "%" & varKey & "%", dic環境変数.Item(varKey))
+            
+        Next
+
+    End If
 
     If Not (txt項目名 Like cnstブックシート名) Then
     
@@ -201,3 +219,29 @@ Function エスケープ(txt項目名, txt項目値) As String
     
 End Function
 
+' *********************************************************************************************************************
+' 機能：環境変数を取得する
+' *********************************************************************************************************************
+'
+Private Function 環境変数取得()
+
+    Set dic環境変数 = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long: i = 1
+
+    Do
+        Dim txtEnviron As String
+        txtEnviron = Environ(i)
+        
+        Dim txtKey As String
+        txtKey = UCase(Mid(txtEnviron, 1, InStr(txtEnviron, "=") - 1))
+
+        Dim txtValue As String
+        txtValue = Mid(txtEnviron, InStr(txtEnviron, "=") + 1)
+
+        dic環境変数.Item(txtKey) = txtValue
+
+        i = i + 1
+    Loop Until Environ(i) = "" And i < 255
+
+End Function
