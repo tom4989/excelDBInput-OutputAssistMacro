@@ -396,6 +396,7 @@ Private Sub btn出力ファイルを実行_Click()
     txt出力パス = txt結果ファイル出力先 & "\" & txtSQL作成元シート名 & "_" & txtSQL作成日時 & ".sql.bat"
 
     Call Shell(txt出力パス, vbNormalFocus)
+    Call Shell("cmd.exe /c " & txt出力パス, vbNormalFocus)
 
     btnエラー確認.Enabled = True
     

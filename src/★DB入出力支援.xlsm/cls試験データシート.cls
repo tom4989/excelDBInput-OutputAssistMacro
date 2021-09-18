@@ -262,9 +262,11 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
     
     wb実行結果.ActiveSheet.Range("A" & lng出力最終行, ActiveCell.SpecialCells(xlLastCell)).Delete
     wb実行結果.ActiveSheet.Outline.ShowLevels RowLevels:=2
-    
+
     wb実行結果.ActiveSheet.Rows.Ungroup
-    
+    ActiveWindow.ScrollColumn = 1
+    ActiveWindow.ScrollRow = 1
+
     wb実行元ブック.Activate
     
     With ActiveSheet

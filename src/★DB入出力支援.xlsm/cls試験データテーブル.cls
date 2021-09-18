@@ -617,7 +617,7 @@ Public Function createDelete文(ByRef obj引数対象シート As Worksheet, Optional By
 
     Dim Re As Object: Set Re = CreateObject("VBScript.RegExp")
     Re.Global = True
-    Re.Pattern = "UPDATE .+\n   "
+    Re.Pattern = "UPDATE [^;]+\n   "
 
     Dim txt結果 As String
     txt結果 = Re.Replace(createUpdate文(obj引数対象シート, is選択行のみ), "DELETE FROM " & txtテーブル物理名)
@@ -635,7 +635,7 @@ Public Function createCount文(ByVal txtQuery As String) As String
     Dim Re As Object: Set Re = CreateObject("VBScript.RegExp")
     Re.Pattern = "(SELECT .+? FROM)"
     
-    createCount文 = Re.Replace(txtQuery, "SELECT COUNT(*) AS COUNT FROM")
+    createCount文 = Re.Replace(Replace(txtQuery, vbCrLf, ""), "SELECT COUNT(*) AS COUNT FROM")
     
 End Function
 
@@ -815,9 +815,7 @@ Public Function get主キー(Optional ByVal arg対象データ行 As Long = -1) As Varian
     For i = 2 To lngカラム終了列
     
         With Me.対象シート
-        
-            ' 主キーカラムであるか否かを、背景色で判断
-            ' If .Cells(lngカラム物理名記載行, i).Interior.ThemeColor = xlThemeColorAccent2 Then
+
             If IsNumeric(.Cells(lng制約記載行, i).Value) And .Cells(lng制約記載行, i).Value <> "" Then
                 
                 lng主キー数 = lng主キー数 + 1
@@ -827,15 +825,22 @@ Public Function get主キー(Optional ByVal arg対象データ行 As Long = -1) As Varian
         End With
     Next
     
+    ' 主キーがない場合、全列主キーとみなす
     If lng主キー数 = 0 Then
     
-        get主キー = Empty
-    Else
+        For i = 2 To lngカラム終了列
     
-        ReDim Preserve var主キー(1 To lng主キー数)
-        get主キー = var主キー
-        
+            With Me.対象シート
+
+                lng主キー数 = lng主キー数 + 1
+                var主キー(lng主キー数) = .Cells(arg対象データ行, i).Value
+                
+            End With
+        Next
     End If
+    
+    ReDim Preserve var主キー(1 To lng主キー数)
+    get主キー = var主キー
     
 End Function
 
