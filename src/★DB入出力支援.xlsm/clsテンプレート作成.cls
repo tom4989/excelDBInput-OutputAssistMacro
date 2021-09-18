@@ -109,7 +109,7 @@ Public Sub テンプレート作成()
         
         For Each txtテーブル名 In dicテンプレート設定値.Item("テンプレート").Item(txtテンプレート名)
         
-            Call テーブル作成(ThisWorkbook.Sheets(txtテンプレート名), CStr(txtテーブル名), lng現在位置)
+            Call テーブル作成(ThisWorkbook.Sheets(txtテンプレート名), UCase(txtテーブル名), lng現在位置)
             lng現在位置 = lng現在位置 + lngテンプレート行数
                 
             setステータスバー (lng処理済件数 & "/" & lng処理対象件数 & _
@@ -138,6 +138,8 @@ Private Sub テーブル作成(ws対象シート As Worksheet, txtテーブル名 As String, ind
     lngEnd = index + lngテンプレート行数
 
     With ws対象シート
+    
+        .Range("A1") = "Template generated at " & Now()
     
         .Rows(lngテンプレート開始位置 & ":" & lngテンプレート開始位置 + lngテンプレート行数 - 1).Select
         Selection.Copy
