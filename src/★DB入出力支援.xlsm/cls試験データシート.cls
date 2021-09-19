@@ -24,6 +24,8 @@ Const cnstデータ開始行idx = 2
 Const cnstデータ終了行idx = 3
 Const cnstデータ終了列idx = 4
 
+Const cnstチャンクサイズ = 16384
+
 ' ---------------------------------------------------------------------------------------------------------------------
 ' 変数
 ' ---------------------------------------------------------------------------------------------------------------------
@@ -39,6 +41,7 @@ End Enum
 Private oraconn As Object
 
 Private dic設定値 As Object
+Private obj設定値シート As cls設定値シート
 
 Private txtDBMS As String
 
@@ -59,6 +62,7 @@ End Sub
 '
 Public Sub 初期化(arg設定値シート As cls設定値シート, argDBMS As String)
 
+    Set obj設定値シート = arg設定値シート
     Set dic設定値 = arg設定値シート.設定値リスト
 
     ' DBMSの種類を設定
@@ -218,8 +222,7 @@ End Function
 
 
 ' *********************************************************************************************************************
-' 機能：COUNTのSQL発行を行う。
-'       カウントの結果を参照したユーザが、処理を中断した場合、FALSEを返す
+' 機能：SQL発行し取得した結果をブックに出力する
 ' *********************************************************************************************************************
 '
 Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
@@ -241,9 +244,10 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
     
         Dim wb実行結果 As Workbook
         Set wb実行結果 = Workbooks.Add
-        
+        Call obj設定値シート.必要に応じて保存(wb実行結果)
+
         wb実行元ブック.ActiveSheet.Copy Before:=wb実行結果.Sheets(1)
-        
+
     Else
         Set wb実行結果 = wb前回実行結果
         
@@ -254,16 +258,19 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
     Dim txt実行結果シート名 As String
     txt実行結果シート名 = Format(Now(), "yyyymmdd_HHnnss")
     
+    Dim ws実行結果シート As Worksheet
+    Set ws実行結果シート = wb実行結果.ActiveSheet
+    
     wb実行結果.Sheets(wb実行元ブック.ActiveSheet.Name).Name = txt実行結果シート名
     
     If wb前回実行結果 Is Nothing Then
         Call 不要シート削除(wb実行結果, txt実行結果シート名)
     End If
     
-    wb実行結果.ActiveSheet.Range("A" & lng出力最終行, ActiveCell.SpecialCells(xlLastCell)).Delete
-    wb実行結果.ActiveSheet.Outline.ShowLevels RowLevels:=2
+    ws実行結果シート.Range("A" & lng出力最終行, ActiveCell.SpecialCells(xlLastCell)).Delete
+    ws実行結果シート.Outline.ShowLevels RowLevels:=2
 
-    wb実行結果.ActiveSheet.Rows.Ungroup
+    ws実行結果シート.Rows.Ungroup
     ActiveWindow.ScrollColumn = 1
     ActiveWindow.ScrollRow = 1
 
@@ -355,60 +362,138 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
                 wb実行結果.ActiveSheet.Rows(lng出力最終行 & ":" _
                     & lng出力最終行 + obj試験データテーブル(i).getDBCount結果() - 1).PasteSpecial
                     
-                    Dim var取得結果 As Variant
-                    ReDim var取得結果( _
-                        1 To obj試験データテーブル(i).getDBCount結果, _
-                        1 To rs.Fields.Count)
+                Dim var取得結果 As Variant
+                ReDim var取得結果( _
+                    1 To obj試験データテーブル(i).getDBCount結果, _
+                    1 To rs.Fields.Count)
                         
-                    Dim j As Long
+                Dim flgLOBあり As Boolean: flgLOBあり = False
+                        
+                Dim j As Long
                     
-                    For j = 1 To UBound(var取得結果)
+                ' レコードの処理
+                For j = 1 To UBound(var取得結果)
                     
-                        If rs.EOF Then
+                    If rs.EOF Then
                         
-                            Exit For
-                        End If
+                        Exit For
+                    End If
                         
-                        Dim k As Long
+                    Dim k As Long
                         
-                        For k = 1 To rs.Fields.Count
+                    ' カラムの処理
+                    For k = 1 To rs.Fields.Count
                         
+                            
+                        ' LOB以外の型の処理
+                        If rs.Fields(k - 1).Type <> 205 Then
+                            
                             var取得結果(j, k) = rs.Fields(k - 1)
+                                        
+                        ' LOBの処理（205=adLongVarBinary=BLOB）
+                        Else
+                            Dim lngLOB全体サイズ As Long
+                            lngLOB全体サイズ = rs.Fields(k - 1).ActualSize
+    
+                            If lngLOB全体サイズ > 0 Then
                             
-                        Next k
-                         
-                        rs.MoveNext
+                                flgLOBあり = True
+    
+                                ' エクスポート先のフォルダの作成
+                                Dim txtエクスポート先 As String
+                                txtエクスポート先 = wb実行結果.Path & "\" & funGetFSO.GetBaseName(wb実行結果.Name)
+                                mkdirIFNotExist (txtエクスポート先)
+                                    
+                                txtエクスポート先 = txtエクスポート先 & "\" & txt実行結果シート名
+                                mkdirIFNotExist (txtエクスポート先)
+                                    
+                                ' LOBファイルのエクスポート
+                                Dim lngチャンク数 As Long
+                                lngチャンク数 = lngLOB全体サイズ \ cnstチャンクサイズ
+    
+                                Dim lng端数 As Long
+                                lng端数 = lngLOB全体サイズ Mod cnstチャンクサイズ
+    
+                                ' LOBファイルを開く
+                                txtエクスポート先 = txtエクスポート先 & "\" & Timer()
+                                var取得結果(j, k) = Replace(txtエクスポート先, wb実行結果.Path & "\", "")
+                                    
+                                Open txtエクスポート先 For Binary Access Write As #1
+    
+                                Dim byteBLOB() As Byte
+    
+                                ' 端数を先に処理
+                                If lng端数 > 0 Then
+                                    ReDim byteBLOB(lng端数 - 1)
+                                    byteBLOB = rs.Fields(k - 1).GetChunk(lng端数)
+                                    Put 1, , byteBLOB()
+                                End If
+    
+                                ReDim byteBLOB(cnstチャンクサイズ - 1)
+    
+                                Dim l As Long
+    
+                                For l = 1 To lngチャンク数
+        
+                                    byteBLOB = rs.Fields(k - 1).GetChunk(cnstチャンクサイズ)
+                                    Put 1, , byteBLOB()
+    
+                                Next l
+                                Close #1
+                            End If
+                                
+                        End If ' LOB処理の終了
+                            
+                    Next k ' カラムの処理
                         
-                    Next j
+                    rs.MoveNext
+                        
+                Next j ' レコードの処理
                     
-                    With wb実行結果.ActiveSheet
+                With wb実行結果.ActiveSheet
                     
-                        .Range(.Cells(lng出力最終行, 2), _
-                            .Cells(lng出力最終行 + UBound(var取得結果) - 1, UBound(var取得結果, 2) + 1)) = var取得結果
+                    .Range(.Cells(lng出力最終行, 2), _
+                        .Cells(lng出力最終行 + UBound(var取得結果) - 1, UBound(var取得結果, 2) + 1)) = var取得結果
                             
-                    End With
+                End With
             
-                    lng出力最終行 = lng出力最終行 + obj試験データテーブル(i).getDBCount結果() + 1
-                    
-                Else
+                ' LOBのファイル名編集
+                If flgLOBあり Then
                 
-                    lng出力最終行 = lng出力最終行 + 2 ' 空枠＋余白で2行
+                    Dim objLOB持ちテーブル As cls試験データテーブル
+                    Set objLOB持ちテーブル = New cls試験データテーブル
+                    Call objLOB持ちテーブル.初期化(obj設定値シート.設定値リスト, txtDBMS, ws実行結果シート)
+                    objLOB持ちテーブル.setテーブル名記載行 (lng出力最終行 - cnstヘッダ行数)
+                    
+                    objLOB持ちテーブル.LOB出力ファイルパス編集
+                    
+                    flgLOBあり = False
+                    
+                    Set objLOB持ちテーブル = Nothing
                     
                 End If
+
+                lng出力最終行 = lng出力最終行 + obj試験データテーブル(i).getDBCount結果() + 1
+                    
+            Else
+                
+                lng出力最終行 = lng出力最終行 + 2 ' 空枠＋余白で2行
+                    
+            End If
                 
 continue:
 
-            Next i
+        Next i
             
-        End With
+    End With
         
-        ' レコードセットをクローズする
-        rs.Close
-        Set rs = Nothing
+    ' レコードセットをクローズする
+    rs.Close
+    Set rs = Nothing
         
-        Set executeSQL = wb実行結果
-            
-            
+    wb実行結果.ActiveSheet.Range("A1") = "Data collection date: " & Now()
+    Set executeSQL = wb実行結果
+                
 End Function
 
 ' *********************************************************************************************************************
@@ -753,7 +838,7 @@ Private Function getテーブル座標情報() As cls試験データテーブル()
             index = index + 1
             
             Set obj試験データテーブル(index) = New cls試験データテーブル
-            Call obj試験データテーブル(index).初期化(dic設定値, txtDBMS)
+            Call obj試験データテーブル(index).初期化(dic設定値, txtDBMS, ActiveSheet)
             
             ' 実際の行番号を設定するため開始行分行数を加算
             Set obj試験データテーブル(index).対象シート = ActiveSheet

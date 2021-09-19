@@ -59,7 +59,7 @@ Public Sub 設定値ロード(arg設定値シート As cls設定値シート)
         
         cmb接続情報.ListIndex = 0
     
-        txt結果ファイル出力先 = obj設定値シート.設定値リスト.Item("結果ファイル出力先")
+        txt結果ファイル出力先 = obj設定値シート.設定値リスト.Item("SQL出力先")
 
     End If
     
@@ -107,8 +107,10 @@ Private Sub レコード取得ボタン()
         wb前回実行結果.Activate
         wb前回実行結果.ActiveSheet.Range("A1").Select
         
-    End If
+        Call obj設定値シート.必要に応じて保存(wb前回実行結果)
         
+    End If
+    
     txbステータスバー.Value = get終了メッセージ("レコード取得")
         
    ' 正常終了
@@ -172,6 +174,7 @@ Private Sub btn更新後レコード取得_Click()
         wb前回実行結果.ActiveSheet.Range("A1").Select
         
         Call obj試験データシート.edit実行結果差分(wb前回実行結果)
+        Call obj設定値シート.必要に応じて保存(wb前回実行結果)
     
     End If
 
@@ -231,7 +234,7 @@ Private Sub btnSQL生成_Click()
     
     Set FSO = CreateObject("Scripting.FileSystemObject")
     
-    txtトランザクション識別文字列 = FSO.getBaseName(wb起動元ブック.Name) & "_" & txtSQL作成元シート名 & "_" & getTimestamp
+    txtトランザクション識別文字列 = FSO.GetBaseName(wb起動元ブック.Name) & "_" & txtSQL作成元シート名 & "_" & getTimestamp
     
     txtSQL.Value = ""
     frmSQL生成.Repaint

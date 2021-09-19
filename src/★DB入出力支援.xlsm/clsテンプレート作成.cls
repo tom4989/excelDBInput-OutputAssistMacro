@@ -139,7 +139,7 @@ Private Sub テーブル作成(ws対象シート As Worksheet, txtテーブル名 As String, ind
 
     With ws対象シート
     
-        .Range("A1") = "Template generated at " & Now()
+        .Range("A1") = "Template generation date: " & Now()
     
         .Rows(lngテンプレート開始位置 & ":" & lngテンプレート開始位置 + lngテンプレート行数 - 1).Select
         Selection.Copy

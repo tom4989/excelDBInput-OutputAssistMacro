@@ -98,9 +98,10 @@ End Property
 ' 機能：初期化
 ' *********************************************************************************************************************
 '
-Public Sub 初期化(arg設定値 As Object, argDBMS As String)
+Public Sub 初期化(arg設定値 As Object, argDBMS As String, arg対象シート As Worksheet)
 
     Set dic設定値 = arg設定値
+    Set obj対象シート = arg対象シート
 
     ' DBMSの種類を設定
     txtDBMS = argDBMS
@@ -124,20 +125,20 @@ Public Sub setテーブル名記載行(ByVal argテーブル名記載行)
     ' 列情報の設定
     lngカラム開始列 = CAlp2Num(dic設定値.Item("カラム開始列"))
     
-    If ActiveSheet.Cells(lngカラム物理名記載行, lngカラム開始列 + 1) <> "" Then
+    If obj対象シート.Cells(lngカラム物理名記載行, lngカラム開始列 + 1) <> "" Then
     
-        lngカラム終了列 = ActiveSheet.Cells(lngカラム物理名記載行, lngカラム開始列).End(xlToRight).Column
+        lngカラム終了列 = obj対象シート.Cells(lngカラム物理名記載行, lngカラム開始列).End(xlToRight).Column
     Else
         lngカラム終了列 = lngカラム開始列
         
     End If
 
     ' 名称情報の設定
-    txtテーブル論理名 = ActiveSheet.Range("D" & lngテーブル名記載行).Value
-    txtテーブル物理名 = ActiveSheet.Range("A" & lngテーブル名記載行).Value
+    txtテーブル論理名 = obj対象シート.Range("D" & lngテーブル名記載行).Value
+    txtテーブル物理名 = obj対象シート.Range("A" & lngテーブル名記載行).Value
 
     ' 表示/非表示状態(論理名列の状態で判断)
-    isHidden = ActiveSheet.Cells(lngカラム論理名記載行, 1).EntireRow.Hidden
+    isHidden = obj対象シート.Cells(lngカラム論理名記載行, 1).EntireRow.Hidden
 
 End Sub
 
@@ -844,6 +845,106 @@ Public Function get主キー(Optional ByVal arg対象データ行 As Long = -1) As Varian
     
 End Function
 
+' *********************************************************************************************************************
+' 機能：LOB列のファイル名を主キーを含めた形式に変更する
+' *********************************************************************************************************************
+'
+Public Sub LOB出力ファイルパス編集()
+
+    Dim i As Long
+    
+    If lngデータ終了行 = 0 Then
+    
+        lngデータ終了行 = 最終行取得(obj対象シート, True)
+
+    End If
+    
+    With obj対象シート
+        For i = lngカラム開始列 To lngカラム終了列
+    
+            If .Cells(lng型桁記載行, i) Like "*LOB*" Then
+            
+                Dim j As Long
+                For j = lngデータ開始行 To lngデータ終了行
+                
+                    If .Cells(j, i) <> "" Then
+                    
+                        Dim txtリネーム前ファイル名 As String
+                        txtリネーム前ファイル名 = obj対象シート.Parent.Path & "\" & .Cells(j, i)
+                    
+                        Dim txtリネーム後ファイル名 As String
+                        txtリネーム後ファイル名 = funフォルダ名取得(txtリネーム前ファイル名) & "\" & txtテーブル物理名 & "_" & get主キーと値を結合した文字列(j)
+                        Name txtリネーム前ファイル名 As txtリネーム後ファイル名
+                        
+                        Dim txtセルに記載するパス As String
+                        txtセルに記載するパス = Replace(txtリネーム後ファイル名, obj対象シート.Parent.Path & "\", "")
+                        .Cells(j, i) = txtセルに記載するパス
+                        
+                        Call .Cells(j, i).Hyperlinks.Add(.Cells(j, i), Address:=funフォルダ名取得(txtセルに記載するパス))
+                        
+                    End If
+                
+                Next j
+            End If
+        Next i
+    End With
+
+End Sub
+
+' *********************************************************************************************************************
+' 機能：主キーと値を結合した文字列を返却する
+' *********************************************************************************************************************
+'
+Public Function get主キーと値を結合した文字列(arg対象データ行 As Long) As String
+
+    Dim txt返却結果 As String
+    ReDim var主キー(1 To lngカラム終了列) ' 予想され得る最大値＝カラム数で配列を確保
+    
+    Dim i, lng主キー数 As Long
+    
+    For i = 2 To lngカラム終了列
+    
+        With Me.対象シート
+
+            If IsNumeric(.Cells(lng制約記載行, i).Value) And .Cells(lng制約記載行, i).Value <> "" Then
+                
+                If txt返却結果 <> "" Then
+                
+                    txt返却結果 = txt返却結果 & "_"
+                End If
+                
+                txt返却結果 = txt返却結果 & _
+                    .Cells(lngカラム物理名記載行, i).Value & "-" & .Cells(arg対象データ行, i).Value
+                
+            End If
+        End With
+    Next
+    
+    ' 主キーがない場合、全列主キーとみなす
+    If txt返却結果 = "" Then
+    
+        For i = 2 To lngカラム終了列
+    
+            With Me.対象シート
+
+                If Not .Cells(lng型桁記載行, i) Like "*LOB*" Then
+                
+                    If txt返却結果 <> "" Then
+                
+                        txt返却結果 = txt返却結果 & "_"
+                    End If
+                
+                    txt返却結果 = txt返却結果 & _
+                        .Cells(lngカラム物理名記載行, i).Value & "-" & .Cells(arg対象データ行, i).Value
+                End If
+                
+            End With
+        Next
+    End If
+    
+    get主キーと値を結合した文字列 = txt返却結果
+    
+End Function
 
 ' *********************************************************************************************************************
 ' 機能：カラムに対する値を型桁に合わせて加工する(チェック機能付)

@@ -245,3 +245,42 @@ Private Function 環境変数取得()
     Loop Until Environ(i) = "" And i < 255
 
 End Function
+
+' *********************************************************************************************************************
+' * 機能　：保存先が設定されている場合、保存して閉じる
+' *********************************************************************************************************************
+'
+Public Sub 必要に応じて保存(wb対象ブック As Workbook, _
+    Optional txt保存先キー As String = "保存先", Optional flgサイレントモード As Boolean = False)
+
+    ' 保存先キーがない場合は何もしない
+    If dic設定値リスト.Item(txt保存先キー) <> "" Then
+
+        If wb対象ブック.Name Like "*.xlsx" Then
+        
+            wb対象ブック.Save
+            Exit Sub
+        
+        End If
+
+        Dim txt保存先ファイル As String
+        txt保存先ファイル = f_日時サフィックス付与( _
+            dic設定値リスト.Item(txt保存先キー), _
+            dic設定値リスト.Item(txt保存先キー & "サフィックス"))
+
+        ' ディレクトリがなかったら作成
+        mkdirIFNotExist (funフォルダ名取得(txt保存先ファイル))
+
+        wb対象ブック.SaveAs (txt保存先ファイル)
+
+        ' サイレントモードの場合はファイルを閉じる
+        If flgサイレントモード Then
+
+            wb対象ブック.Close
+
+        End If
+
+    End If
+
+End Sub
+
