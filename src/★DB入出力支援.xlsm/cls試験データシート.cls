@@ -47,8 +47,8 @@ Private oraconn As Object
 
 Private dic設定値 As Object
 Private obj設定値シート As cls設定値シート
-
 Private txtDBMS As String
+Private objReg As Object
 
 ' *********************************************************************************************************************
 ' 機能：コンストラクタ ※ 引数は指定できない
@@ -601,7 +601,6 @@ Public Sub edit実行結果差分(ByRef wb引数実行結果 As Workbook)
 
     wb引数実行結果.Activate
     
-    
     Dim ws実行前, ws実行後 As Worksheet
     
     Set ws実行前 = wb引数実行結果.Sheets(wb引数実行結果.Sheets.Count - 1)
@@ -777,6 +776,18 @@ Private Sub compareレコード( _
     ByRef obj実行後データテーブル As cls試験データテーブル, _
     ByVal lng実行前対象行 As Long, ByVal lng実行後対象行 As Long)
     
+    ' 正規表現オブジェクトの初期化
+    If objReg Is Nothing Then
+        
+        Set objReg = CreateObject("VBScript.RegExp")
+        
+        With objReg
+            .Pattern = "Path=.+Hash="
+            .IgnoreCase = False
+            .Global = True
+        End With
+    End If
+    
     Dim txtコメント文字列 As String
     
     Dim txt変更前, txt変更後 As String
@@ -784,9 +795,9 @@ Private Sub compareレコード( _
     Dim i As Long
     For i = 2 To obj実行前データテーブル.カラム終了列
     
-        txt変更前 = obj実行前データテーブル.対象シート.Cells(lng実行前対象行, i)
-        txt変更後 = obj実行後データテーブル.対象シート.Cells(lng実行後対象行, i)
-        
+        ' LOBの場合だけHash値だけを比較する
+        txt変更前 = objReg.Replace(obj実行前データテーブル.対象シート.Cells(lng実行前対象行, i), "")
+        txt変更後 = objReg.Replace(obj実行後データテーブル.対象シート.Cells(lng実行後対象行, i), "")
         
         If txt変更前 <> txt変更後 Then
         
