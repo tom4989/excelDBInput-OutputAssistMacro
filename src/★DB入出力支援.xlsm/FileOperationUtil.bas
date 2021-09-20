@@ -285,3 +285,29 @@ Function getDirNames(directoryPath As String) As String()
     getDirNames = dirNames
 
 End Function
+
+' *********************************************************************************************************************
+' * 機能　：ハッシュ値の算出
+' *********************************************************************************************************************
+'
+Public Function funファイルハッシュ値算出(txtファイルパス As String) As String
+
+    Dim objWShell As Object
+    Set objWShell = CreateObject("WScript.Shell")
+    
+    Dim txtコマンド As String
+    txtコマンド = "certutil -hashfile " & txtファイルパス & " MD5 | findstr /V CertUtil | findstr /V MD5"
+    
+    Dim objExec As Object
+    Set objExec = objWShell.Exec("cmd.exe /c " & txtコマンド)
+
+    Do While objExec.Status = 0
+        DoEvents
+    Loop
+
+    funファイルハッシュ値算出 = Replace(Replace(objExec.stdOut.ReadAll, vbCr, ""), vbLf, "")
+
+    Set objExec = Nothing
+    Set objWShell = Nothing
+
+End Function

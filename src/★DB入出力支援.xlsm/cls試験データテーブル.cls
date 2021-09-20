@@ -271,7 +271,7 @@ End Function
 '
 Public Function createSELECT文From単行(Optional argデータ行 As Long = -1) As String
 
-    With ActiveSheet
+    With obj対象シート
         
         Dim j As Long
         Dim stbSELECT文 As New clsStringBuilder
@@ -646,7 +646,7 @@ End Function
 '
 Public Sub copy枠Toクリップボード()
 
-    ActiveWorkbook.ActiveSheet.Rows(lngテーブル名記載行 & ":" & lngデータ開始行).Copy
+    obj対象シート.Rows(lngテーブル名記載行 & ":" & lngデータ開始行).Copy
     
 End Sub
 
@@ -780,7 +780,7 @@ End Function
 '
 Private Function getデータ行の入力数(Optional arg対象データ行 = -1)
 
-    With ActiveSheet
+    With obj対象シート
     
         If arg対象データ行 = -1 Then
         
@@ -872,15 +872,29 @@ Public Sub LOB出力ファイルパス編集()
                         Dim txtリネーム前ファイル名 As String
                         txtリネーム前ファイル名 = obj対象シート.Parent.Path & "\" & .Cells(j, i)
                     
+                        Dim txt拡張子 As String
+                        txt拡張子 = ""
+                    
+                        If .Cells(lng型桁記載行, i) Like "CLOB*" Then
+                        
+                            txt拡張子 = ".txt"
+                        
+                        ElseIf .Cells(lng型桁記載行, i) Like "BLOB*" Then
+                        
+                            txt拡張子 = ".blob"
+                        
+                        End If
+                        
                         Dim txtリネーム後ファイル名 As String
-                        txtリネーム後ファイル名 = funフォルダ名取得(txtリネーム前ファイル名) & "\" & txtテーブル物理名 & "_" & get主キーと値を結合した文字列(j)
+                        txtリネーム後ファイル名 = funフォルダ名取得(txtリネーム前ファイル名) & "\" & txtテーブル物理名 & "_" & get主キーと値を結合した文字列(j) & txt拡張子
                         Name txtリネーム前ファイル名 As txtリネーム後ファイル名
                         
                         Dim txtセルに記載するパス As String
                         txtセルに記載するパス = Replace(txtリネーム後ファイル名, obj対象シート.Parent.Path & "\", "")
-                        .Cells(j, i) = txtセルに記載するパス
+                        .Cells(j, i) = "Path=" & txtセルに記載するパス & ",Hash=" & _
+                            funファイルハッシュ値算出(txtリネーム後ファイル名)
                         
-                        Call .Cells(j, i).Hyperlinks.Add(.Cells(j, i), Address:=funフォルダ名取得(txtセルに記載するパス))
+                        Call .Cells(j, i).Hyperlinks.Add(.Cells(j, i), Address:=txtセルに記載するパス)
                         
                     End If
                 

@@ -25,6 +25,11 @@ Const cnstデータ終了行idx = 3
 Const cnstデータ終了列idx = 4
 
 Const cnstチャンクサイズ = 16384
+'Const cnstチャンクサイズ = 8
+
+Const cnstCLOBType = 201
+Const cnstBLOBType = 205
+
 
 ' ---------------------------------------------------------------------------------------------------------------------
 ' 変数
@@ -386,11 +391,11 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
                         
                             
                         ' LOB以外の型の処理
-                        If rs.Fields(k - 1).Type <> 205 Then
+                        If rs.Fields(k - 1).Type <> cnstCLOBType And rs.Fields(k - 1).Type <> cnstBLOBType Then
                             
                             var取得結果(j, k) = rs.Fields(k - 1)
                                         
-                        ' LOBの処理（205=adLongVarBinary=BLOB）
+                        ' LOBの処理
                         Else
                             Dim lngLOB全体サイズ As Long
                             lngLOB全体サイズ = rs.Fields(k - 1).ActualSize
@@ -415,18 +420,26 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
                                 lng端数 = lngLOB全体サイズ Mod cnstチャンクサイズ
     
                                 ' LOBファイルを開く
-                                txtエクスポート先 = txtエクスポート先 & "\" & Timer()
+                                txtエクスポート先 = txtエクスポート先 & "\" & Timer() & "_" & Rnd
                                 var取得結果(j, k) = Replace(txtエクスポート先, wb実行結果.Path & "\", "")
                                     
                                 Open txtエクスポート先 For Binary Access Write As #1
     
                                 Dim byteBLOB() As Byte
+                                Dim txtCLOB As String
     
                                 ' 端数を先に処理
                                 If lng端数 > 0 Then
                                     ReDim byteBLOB(lng端数 - 1)
                                     byteBLOB = rs.Fields(k - 1).GetChunk(lng端数)
-                                    Put 1, , byteBLOB()
+                                    
+                                    If rs.Fields(k - 1).Type = cnstCLOBType Then
+                                        txtCLOB = byteBLOB
+                                        Put 1, , txtCLOB
+                                    Else
+                                    
+                                        Put 1, , byteBLOB()
+                                    End If
                                 End If
     
                                 ReDim byteBLOB(cnstチャンクサイズ - 1)
@@ -436,8 +449,14 @@ Private Function executeSQL(ByRef wb前回実行結果 As Workbook) As Workbook
                                 For l = 1 To lngチャンク数
         
                                     byteBLOB = rs.Fields(k - 1).GetChunk(cnstチャンクサイズ)
-                                    Put 1, , byteBLOB()
-    
+                                    
+                                    If rs.Fields(k - 1).Type = cnstCLOBType Then
+                                        txtCLOB = byteBLOB
+                                        Put 1, , txtCLOB
+                                    Else
+                                    
+                                        Put 1, , byteBLOB()
+                                    End If
                                 Next l
                                 Close #1
                             End If
