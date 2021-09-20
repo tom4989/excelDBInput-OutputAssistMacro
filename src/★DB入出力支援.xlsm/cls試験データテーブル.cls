@@ -311,7 +311,8 @@ Public Function createSELECT文From単行(Optional argデータ行 As Long = -1) As Str
                 GoTo continue
             End If
         
-            If .Cells(argデータ行, j).Value <> "" Then
+            ' LOBは対象外
+            If .Cells(argデータ行, j).Value <> "" And Not .Cells(lng型桁記載行, j) Like "*LOB*" Then
         
                 If stbWHERE句.length = 0 Then
                     stbWHERE句.append (" WHERE ")
@@ -321,7 +322,7 @@ Public Function createSELECT文From単行(Optional argデータ行 As Long = -1) As Str
                     End If
                     stbWHERE句.append (" AND ")
                 End If
-            
+                
                 stbWHERE句.append (.Cells(lngカラム物理名記載行, j).Value)
                 stbWHERE句.append (" = ")
                 stbWHERE句.append (editカラム値(.Cells(argデータ行, j).Value, .Cells(lng型桁記載行, j).Value, False))
@@ -473,20 +474,24 @@ Public Function createInsert文(ByRef obj引数対象シート As Worksheet, Optional By
             
             For k = 2 To lngカラム終了列
             
-                If k > 2 Then
-                    If txtInsertInto.lastLineLength > dic設定値.Item("折返文字数") Then
-                        Call txtInsertInto.appendLine("")
-                    End If
-                    Call txtInsertInto.append(", ")
+                If Not .Cells(lng型桁記載行, k) Like "*LOB*" Then
+            
+                    If k > 2 Then
+                        If txtInsertInto.lastLineLength > dic設定値.Item("折返文字数") Then
+                            Call txtInsertInto.appendLine("")
+                        End If
+                        Call txtInsertInto.append(", ")
                     
-                    If txtInsertValues.lastLineLength > dic設定値.Item("折返文字数") Then
-                        Call txtInsertValues.appendLine("")
+                        If txtInsertValues.lastLineLength > dic設定値.Item("折返文字数") Then
+                            Call txtInsertValues.appendLine("")
+                        End If
+                        Call txtInsertValues.append(", ")
                     End If
-                    Call txtInsertValues.append(", ")
-                End If
                 
-                Call txtInsertInto.append(.Cells(lngカラム物理名記載行, k))
-                Call txtInsertValues.append(editカラム値(.Cells(j, k), .Cells(lng型桁記載行, k)))
+                    Call txtInsertInto.append(.Cells(lngカラム物理名記載行, k))
+                    Call txtInsertValues.append(editカラム値(.Cells(j, k), .Cells(lng型桁記載行, k)))
+                
+                End If
             Next k
             
             Call txt結果.append(txtInsertInto.toString)
@@ -554,6 +559,7 @@ Public Function createUpdate文(ByRef obj引数対象シート As Worksheet, Optional By
             
             For k = 2 To lngカラム終了列
             
+                ' 主キー(WHERE句)
                 If containArray(var主キー, .Cells(lngカラム物理名記載行, k)) Then
                 
                     If stbWHERE.length = 0 Then
@@ -570,27 +576,39 @@ Public Function createUpdate文(ByRef obj引数対象シート As Worksheet, Optional By
                     stbWHERE.append (.Cells(lngカラム物理名記載行, k))
                     stbWHERE.append (" = ")
                     stbWHERE.append (editカラム値(.Cells(j, k), .Cells(lng型桁記載行, k)))
-                Else
-                    If stbUpdate.length = 0 Then
-                    
-                        stbUpdate.append ("UPDATE " & txtテーブル物理名 & " SET ")
-                    Else
-                        If stbUpdate.lastLineLength > dic設定値.Item("折返文字数") Then
-                            Call stbUpdate.appendLine("")
-                        End If
-                        stbUpdate.append (" , ")
-                    End If
-                    
-                    stbUpdate.append (.Cells(lngカラム物理名記載行, k))
-                    stbUpdate.append (" = ")
-                    stbUpdate.append (editカラム値(.Cells(j, k), .Cells(lng型桁記載行, k)))
-                End If
                 
+                ' 主キー以外(SET句)
+                Else
+                
+                    ' LOB以外だった場合、SET句を追記
+                    If Not .Cells(lng型桁記載行, k) Like "*LOB*" Then
+                
+                        If stbUpdate.length = 0 Then
+                    
+                            stbUpdate.append ("UPDATE " & txtテーブル物理名 & " SET ")
+                        Else
+                    
+                            If stbUpdate.lastLineLength > dic設定値.Item("折返文字数") Then
+                                Call stbUpdate.appendLine("")
+                            End If
+                            stbUpdate.append (" , ")
+                        
+                        End If
+                    
+                        stbUpdate.append (.Cells(lngカラム物理名記載行, k))
+                        stbUpdate.append (" = ")
+                        stbUpdate.append (editカラム値(.Cells(j, k), .Cells(lng型桁記載行, k)))
+                        
+                    End If
+                End If
             Next k
             
-            stb結果.append (stbUpdate.toString & vbCrLf)
-            stb結果.append ("   ")
-            stb結果.append (stbWHERE.toString & ";" & vbCrLf)
+            If stbUpdate.length <> 0 Then
+            
+                stb結果.append (stbUpdate.toString & vbCrLf)
+                stb結果.append ("   ")
+                stb結果.append (stbWHERE.toString & ";" & vbCrLf)
+            End If
             
             stbUpdate.length = 0
             stbWHERE.length = 0
@@ -616,14 +634,79 @@ End Function
 '
 Public Function createDelete文(ByRef obj引数対象シート As Worksheet, Optional ByVal is選択行のみ As Boolean) As String
 
-    Dim Re As Object: Set Re = CreateObject("VBScript.RegExp")
-    Re.Global = True
-    Re.Pattern = "UPDATE [^;]+\n   "
+    Dim stbWHERE As New clsStringBuilder
+    Dim stb結果 As New clsStringBuilder
+                
+    With Me.対象シート
+    
+        If .Range("B" & lngデータ開始行).Value = "" Then
+        
+            Exit Function ' データがない場合、UPDATE文の作成はしない
+        End If
+        
+        Dim var主キー As Variant
+        var主キー = Me.get主キー()
+        
+        Dim j, k As Long
+        
+        ' データ行、1行ごとの処理
+        For j = lngデータ開始行 To lngデータ終了行
+        
+            If .Range("B" & j).Value = "" Then
+            
+                GoTo jContinue
+            End If
+            
+            If is選択行のみ And Not is選択状態(j) Then ' 選択行のみSQL文作成対象にする場合の考慮
+            
+                GoTo jContinue
+            End If
+            
+            For k = 2 To lngカラム終了列
+            
+                ' 主キー(WHERE句)
+                If containArray(var主キー, .Cells(lngカラム物理名記載行, k)) Then
+                
+                    If Not .Cells(lng型桁記載行, k) Like "*LOB*" Then
+                
+                        If stbWHERE.length = 0 Then
+                    
+                            stbWHERE.append ("DELETE FROM " & txtテーブル物理名 & " WHERE ")
+                        Else
+                            If stbWHERE.lastLineLength > dic設定値.Item("折返文字数") Then
+                                Call stbWHERE.appendLine("")
+                            End If
+                            stbWHERE.append (" AND ")
+                    
+                        End If
 
-    Dim txt結果 As String
-    txt結果 = Re.Replace(createUpdate文(obj引数対象シート, is選択行のみ), "DELETE FROM " & txtテーブル物理名)
+                        stbWHERE.append (.Cells(lngカラム物理名記載行, k))
+                        stbWHERE.append (" = ")
+                        stbWHERE.append (editカラム値(.Cells(j, k), .Cells(lng型桁記載行, k)))
+                    
+                    End If
+                End If
+            Next k
+            
+            If stbWHERE.length <> 0 Then
+            
+                stb結果.append (stbWHERE.toString & ";" & vbCrLf)
+            
+            End If
+            
+            stbWHERE.length = 0
+jContinue:
+        Next j
+        
+    End With
 
-    createDelete文 = txt結果
+    If stb結果.length <> 0 Then
+        stb結果.insertHead (vbCrLf & "-- " & txtテーブル論理名 & " " & txtテーブル物理名 & vbCrLf)
+        createDelete文 = stb結果.toString
+    End If
+
+    Set stb結果 = Nothing
+    Set stbWHERE = Nothing
 
 End Function
 
