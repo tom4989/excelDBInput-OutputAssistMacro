@@ -1111,7 +1111,11 @@ Private Function editカラム値( _
         If is列名 Then
             editカラム値 = argカラム値
         Else
-            editカラム値 = "'" & argカラム値 & "'"
+            editカラム値 = "'" & _
+                Replace(Replace(argカラム値, _
+                    vbCr, "' || " & dicDBMS.Item("CR") & " || '"), _
+                    vbLf, "' || " & dicDBMS.Item("LF") & " || '") & _
+                "'"
         End If
         
     Else
