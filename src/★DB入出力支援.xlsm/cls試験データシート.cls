@@ -40,7 +40,8 @@ Public Enum SQL種別
     INSERT文 = 2
     UPDATE文 = 3
     DELETE文 = 4
-    DELETEINSERT文 = 5
+    DELETE_PK文 = 5
+    DELETE_ALL文 = 6
 End Enum
 
 Private oraconn As Object
@@ -545,8 +546,14 @@ Public Function 対象シートSQL文作成( _
             stb結果.append (obj試験データテーブル(i).createUpdate文(obj対象シート, is選択行のみ))
         
         ElseIf argSQL種別 = SQL種別.DELETE文 Then
-           stb結果.append (obj試験データテーブル(i).createDelete文(obj対象シート, is選択行のみ))
+           stb結果.append (obj試験データテーブル(i).createDelete文(obj対象シート, is選択行のみ, False))
         
+        ElseIf argSQL種別 = SQL種別.DELETE_PK文 Then
+           stb結果.append (obj試験データテーブル(i).createDelete文(obj対象シート, is選択行のみ, True))
+                
+        ElseIf argSQL種別 = SQL種別.DELETE_ALL文 Then
+           stb結果.append (obj試験データテーブル(i).createDelete条件なし文(obj対象シート, is選択行のみ))
+                
         End If
         
     Next i

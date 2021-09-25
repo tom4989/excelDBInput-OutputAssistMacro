@@ -632,14 +632,15 @@ End Function
 ' 機能：DELETE文を作成する
 ' *********************************************************************************************************************
 '
-Public Function createDelete文(ByRef obj引数対象シート As Worksheet, Optional ByVal is選択行のみ As Boolean) As String
+Public Function createDelete文(ByRef obj引数対象シート As Worksheet, _
+    Optional ByVal is選択行のみ As Boolean = False, Optional ByVal is主キーのみ As Boolean = True) As String
 
     Dim stbWHERE As New clsStringBuilder
     Dim stb結果 As New clsStringBuilder
                 
     With Me.対象シート
     
-        If .Range("B" & lngデータ開始行).Value = "" Then
+        If is主キーのみ And .Range("B" & lngデータ開始行).Value = "" Then
         
             Exit Function ' データがない場合、UPDATE文の作成はしない
         End If
@@ -652,7 +653,7 @@ Public Function createDelete文(ByRef obj引数対象シート As Worksheet, Optional By
         ' データ行、1行ごとの処理
         For j = lngデータ開始行 To lngデータ終了行
         
-            If .Range("B" & j).Value = "" Then
+            If is主キーのみ And .Range("B" & j).Value = "" Then
             
                 GoTo jContinue
             End If
@@ -665,13 +666,17 @@ Public Function createDelete文(ByRef obj引数対象シート As Worksheet, Optional By
             For k = 2 To lngカラム終了列
             
                 ' 主キー(WHERE句)
-                If containArray(var主キー, .Cells(lngカラム物理名記載行, k)) Then
+                If Not (is主キーのみ) Or containArray(var主キー, .Cells(lngカラム物理名記載行, k)) Then
                 
-                    If Not .Cells(lng型桁記載行, k) Like "*LOB*" Then
+                    ' LOBはWHERE句の条件にしない
+                    If .Cells(j, k) <> "" And Not .Cells(lng型桁記載行, k) Like "*LOB*" Then
                 
+                        ' プレフィックス
                         If stbWHERE.length = 0 Then
                     
                             stbWHERE.append ("DELETE FROM " & txtテーブル物理名 & " WHERE ")
+
+                        ' セパレータ
                         Else
                             If stbWHERE.lastLineLength > dic設定値.Item("折返文字数") Then
                                 Call stbWHERE.appendLine("")
@@ -680,6 +685,7 @@ Public Function createDelete文(ByRef obj引数対象シート As Worksheet, Optional By
                     
                         End If
 
+                        ' 条件
                         stbWHERE.append (.Cells(lngカラム物理名記載行, k))
                         stbWHERE.append (" = ")
                         stbWHERE.append (editカラム値(.Cells(j, k), .Cells(lng型桁記載行, k)))
@@ -707,6 +713,46 @@ jContinue:
 
     Set stb結果 = Nothing
     Set stbWHERE = Nothing
+
+End Function
+
+
+' *********************************************************************************************************************
+' 機能：DELETE文を作成する
+' *********************************************************************************************************************
+'
+Public Function createDelete条件なし文( _
+    ByRef obj引数対象シート As Worksheet, Optional ByVal is選択行のみ As Boolean = False) As String
+
+    Dim stb結果 As New clsStringBuilder
+                
+    With Me.対象シート
+        
+        Dim j, k As Long
+        
+        ' データ行、1行ごとの処理
+        For j = lngデータ開始行 To lngデータ終了行
+        
+            
+            If is選択行のみ And Not is選択状態(j) Then ' 選択行のみSQL文作成対象にする場合の考慮
+            
+                GoTo jContinue
+            End If
+   
+            stb結果.append ("DELETE FROM " & txtテーブル物理名 & ";" & vbCrLf)
+            Exit For
+
+jContinue:
+        Next j
+        
+    End With
+
+    If stb結果.length <> 0 Then
+        stb結果.insertHead (vbCrLf & "-- " & txtテーブル論理名 & " " & txtテーブル物理名 & vbCrLf)
+        createDelete条件なし文 = stb結果.toString
+    End If
+
+    Set stb結果 = Nothing
 
 End Function
 

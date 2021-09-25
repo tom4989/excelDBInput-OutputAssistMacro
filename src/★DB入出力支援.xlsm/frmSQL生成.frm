@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmSQL生成 
    Caption         =   "現在のシート"
-   ClientHeight    =   8388
+   ClientHeight    =   9024
    ClientLeft      =   108
    ClientTop       =   456
    ClientWidth     =   12840
@@ -27,6 +27,10 @@ Private txtSQL作成日時 As String
 Private txt結果ファイル出力先 As String
 
 Private obj設定値シート As cls設定値シート
+
+Private Sub Frame4_Click()
+
+End Sub
 
 ' *********************************************************************************************************************
 ' * 機能　：フォーム生成時処理
@@ -304,17 +308,27 @@ Private Function createSQL文( _
     ElseIf rdUpdate Then
         createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.UPDATE文, rdb選択行のみ)
         
-    ElseIf rdSELECT Then
+    ElseIf rdSelect Then
         createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.SELECT文, rdb選択行のみ)
         
     ElseIf rdDelete Then
         createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE文, rdb選択行のみ)
         
-    ElseIf rdDELETEINSERT Then
+    ElseIf rdDeletePK Then
+        createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE_PK文, rdb選択行のみ)
         
-        createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE文, rdb選択行のみ) & _
+    ElseIf rdDeleteAll Then
+        createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE_ALL文, rdb選択行のみ)
+    
+    ElseIf rdDeletePKInsert Then
+        
+        createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE_PK文, rdb選択行のみ) & _
             obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.INSERT文, rdb選択行のみ)
         
+    ElseIf rdDeleteAllInsert Then
+        
+        createSQL文 = obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.DELETE_ALL文, rdb選択行のみ) & _
+            obj試験データシート.対象シートSQL文作成(obj対象シート, SQL種別.INSERT文, rdb選択行のみ)
     End If
     
 End Function

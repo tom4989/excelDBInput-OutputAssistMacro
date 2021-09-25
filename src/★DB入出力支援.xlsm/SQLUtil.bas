@@ -427,24 +427,6 @@ jContinue:
 End Function
 
 ' *********************************************************************************************************************
-' 機能：DELETE文を作成する
-' *********************************************************************************************************************
-'
-Public Function createDelete文(ByVal is選択行のみ As Boolean) As String
-
-    Dim Re As Object: Set Re = CreateObject("VBScript.RegExp")
-    Re.Global = True
-    Re.Pattern = "SELECT.+? FROM "
-
-    Dim txt結果 As String
-    txt結果 = Re.Replace(createSELECT文From複数行To複数SQL(is選択行のみ), "DELETE FROM ")
-    
-    Re.Pattern = " ORDER BY .+?;"
-    createDelete文 = Re.Replace(str結果, ";")
-
-End Function
-
-' *********************************************************************************************************************
 ' 機能：SELECT文を、COUNTを行うSQLに変更する。
 ' *********************************************************************************************************************
 '
