@@ -1014,8 +1014,11 @@ Public Sub LOB出力ファイルパス編集()
                         
                         End If
                         
+                        Dim txtカラム物理名 As String
+                        txtカラム物理名 = .Cells(lngカラム物理名記載行, i)
+                        
                         Dim txtリネーム後ファイル名 As String
-                        txtリネーム後ファイル名 = funフォルダ名取得(txtリネーム前ファイル名) & "\" & txtテーブル物理名 & "_" & get主キーと値を結合した文字列(j) & txt拡張子
+                        txtリネーム後ファイル名 = funフォルダ名取得(txtリネーム前ファイル名) & "\" & txtテーブル物理名 & "_" & txtカラム物理名 & "_" & get主キーと値を結合した文字列(j) & txt拡張子
                         Name txtリネーム前ファイル名 As txtリネーム後ファイル名
                         
                         Dim txtセルに記載するパス As String
